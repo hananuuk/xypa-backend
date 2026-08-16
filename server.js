@@ -65,9 +65,16 @@ app.get('/auth/status', (req, res) => {
   res.json({ connected: !!loadTokens() });
 });
 
-// Same amount-guessing logic as the app's paste-in parser
+// Same amount-guessing logic as xypa's paste-in parser
 function findBestAmount(text) {
-  const priorityWords = ['total', 'amount charged', 'you paid', 'order total', 'charged', 'amount due', 'grand total'];
+  // Mongolian bank alert format: "25,800.00MNT" or "25,800 MNT"
+  const mntRe = /(\d{1,3}(?:,\d{3})*(?:\.\d{1,2})?)\s?MNT/gi;
+  const mntMatches = [...text.matchAll(mntRe)];
+  if (mntMatches.length) {
+    return parseFloat(mntMatches[mntMatches.length - 1][1].replace(/,/g, ''));
+  }
+
+  const priorityWords = ['total', 'amount charged', 'you paid', 'order total', 'charged', 'amount due', 'grand total', 'дүн'];
   const lines = text.split(/\n/);
   const dollarRe = /\$\s?(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)/g;
   for (const word of priorityWords) {
@@ -81,6 +88,16 @@ function findBestAmount(text) {
   const all = [...text.matchAll(dollarRe)].map(m => parseFloat(m[1].replace(/,/g, '')));
   if (all.length) return Math.max(...all);
   return null;
+}
+
+function extractMerchant(fromHeader, subject, bodyText) {
+  const utgaMatch = bodyText.match(/Гүйлгээний утга[:\s]*([^\n]+)/i);
+  if (utgaMatch) {
+    const parts = utgaMatch[1].split(':');
+    const candidate = parts[parts.length - 1].trim();
+    if (candidate) return candidate.slice(0, 40);
+  }
+  return fromHeader.replace(/<.*>/, '').replace(/"/g, '').trim() || subject.slice(0, 40);
 }
 
 function decodeBody(payload) {
@@ -105,11 +122,12 @@ app.get('/api/sync', async (req, res) => {
   try {
     const list = await gmail.users.messages.list({
       userId: 'me',
-      q: '(receipt OR "order confirmation" OR "your order" OR invoice OR "payment confirmation") newer_than:30d',
-      maxResults: 25
+      q: '(receipt OR "order confirmation" OR "your order" OR invoice OR "payment confirmation" OR "purchase" OR "your receipt" OR "payment received" OR "thank you for your order" OR "order summary" OR "Гүйлгээний мэдэгдэл" OR "зарлага" OR "Гүйлгээний дүн") newer_than:60d',
+      maxResults: 40
     });
     const messages = list.data.messages || [];
     const results = [];
+    let skippedNoAmount = 0;
 
     for (const m of messages) {
       const msg = await gmail.users.messages.get({ userId: 'me', id: m.id, format: 'full' });
@@ -119,9 +137,9 @@ app.get('/api/sync', async (req, res) => {
       const dateHeader = headers.find(h => h.name === 'Date')?.value;
       const bodyText = decodeBody(msg.data.payload) || msg.data.snippet || '';
       const amount = findBestAmount(subject + '\n' + bodyText);
-      if (amount === null) continue;
+      if (amount === null) { skippedNoAmount++; continue; }
 
-      const merchant = fromHeader.replace(/<.*>/, '').replace(/"/g, '').trim() || subject.slice(0, 40);
+      const merchant = extractMerchant(fromHeader, subject, bodyText);
 
       results.push({
         gmailId: m.id,
@@ -131,14 +149,14 @@ app.get('/api/sync', async (req, res) => {
         date: dateHeader ? new Date(dateHeader).toISOString().slice(0, 10) : null
       });
     }
-    res.json({ transactions: results });
+    res.json({ transactions: results, debug: { messagesFound: messages.length, skippedNoAmount } });
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: 'Could not fetch Gmail messages.' });
   }
 });
 
-app.get('/', (req, res) => res.send('Ledger backend is running.'));
+app.get('/', (req, res) => res.send('xypa backend is running.'));
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Ledger backend listening on port ${PORT}`));
+app.listen(PORT, () => console.log(`xypa backend listening on port ${PORT}`));

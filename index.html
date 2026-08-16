@@ -269,7 +269,7 @@ let activeTab = 'manual';
 let parsedDraft = null;
 
 const $ = id => document.getElementById(id);
-const fmt = n => '$' + Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmt = n => Math.abs(n).toLocaleString('en-US',{maximumFractionDigits:0}) + '\u20AE';
 
 function categorySelectOptions(){
   return CATEGORIES.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
@@ -487,7 +487,14 @@ $('parseBtn').onclick = () => {
 };
 
 function findBestAmount(text){
-  const priorityWords = ['total','amount charged','you paid','order total','charged','amount due','grand total'];
+  // Mongolian bank alert format: "25,800.00MNT" or "25,800 MNT"
+  const mntRe = /(\d{1,3}(?:,\d{3})*(?:\.\d{1,2})?)\s?MNT/gi;
+  const mntMatches = [...text.matchAll(mntRe)];
+  if(mntMatches.length){
+    return parseFloat(mntMatches[mntMatches.length-1][1].replace(/,/g,''));
+  }
+
+  const priorityWords = ['total','amount charged','you paid','order total','charged','amount due','grand total','дүн'];
   const lines = text.split(/\n/);
   const dollarRe = /\$\s?(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)/g;
 
@@ -507,6 +514,14 @@ function findBestAmount(text){
 }
 
 function guessMerchant(text){
+  // Mongolian bank alert format: "Гүйлгээний утга: 4207********1728:SHIM AGRO FERM"
+  const utgaMatch = text.match(/Гүйлгээний утга[:\s]*([^\n]+)/i);
+  if(utgaMatch){
+    const parts = utgaMatch[1].split(':');
+    const candidate = parts[parts.length-1].trim();
+    if(candidate) return candidate.slice(0,40);
+  }
+
   const lines = text.split(/\n/).map(l => l.trim()).filter(Boolean);
   for(const line of lines){
     const m = line.match(/(?:from|at|merchant|receipt from)[:\s]+([A-Za-z0-9&'.\-\s]{2,40})/i);
@@ -570,7 +585,12 @@ async function syncGmail(){
     syncCandidates = (data.transactions || []).filter(t => !alreadyImported.has(t.gmailId));
 
     if(syncCandidates.length === 0){
-      $('syncStatus').textContent = 'No new receipts found in the last 30 days.';
+      const dbg = data.debug || {};
+      if(dbg.messagesFound > 0){
+        $('syncStatus').textContent = `Found ${dbg.messagesFound} email${dbg.messagesFound > 1 ? 's' : ''} that looked like receipts, but couldn't find a dollar amount in any of them.`;
+      }else{
+        $('syncStatus').textContent = 'No receipt-looking emails found in the last 60 days.';
+      }
       return;
     }
     $('syncStatus').textContent = `Found ${syncCandidates.length} new receipt${syncCandidates.length > 1 ? 's' : ''} — uncheck any you don't want, then import.`;
