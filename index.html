@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>xypa</title>
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icons/favicon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="xypa">
+<meta name="theme-color" content="#211F1B">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -293,22 +299,22 @@ $('mDate').value = todayISO();
 
 async function loadData(){
   try{
-    const t = await window.storage.get('transactions');
-    transactions = t ? JSON.parse(t.value) : [];
+    const t = localStorage.getItem('xypa-transactions');
+    transactions = t ? JSON.parse(t) : [];
   }catch(e){ transactions = []; }
   try{
-    const b = await window.storage.get('budget');
-    budget = b ? JSON.parse(b.value) : 0;
+    const b = localStorage.getItem('xypa-budget');
+    budget = b ? JSON.parse(b) : 0;
   }catch(e){ budget = 0; }
   render();
 }
 
 async function saveTransactions(){
-  try{ await window.storage.set('transactions', JSON.stringify(transactions)); }
+  try{ localStorage.setItem('xypa-transactions', JSON.stringify(transactions)); }
   catch(e){ console.error('Storage error', e); }
 }
 async function saveBudget(){
-  try{ await window.storage.set('budget', JSON.stringify(budget)); }
+  try{ localStorage.setItem('xypa-budget', JSON.stringify(budget)); }
   catch(e){ console.error('Storage error', e); }
 }
 
@@ -514,7 +520,13 @@ function findBestAmount(text){
 }
 
 function guessMerchant(text){
-  // Mongolian bank alert format: "Гүйлгээний утга: 4207********1728:SHIM AGRO FERM"
+  // Mongolian bank alert: masked card number followed by merchant name,
+  // e.g. "4207********1728:SHIM AGRO FERM" -> "SHIM AGRO FERM"
+  const panMerchantMatch = text.match(/\d{2,6}\*{2,}\d{2,6}\s*:\s*([A-Za-z0-9 .,&'\-]{2,40})/);
+  if(panMerchantMatch){
+    return panMerchantMatch[1].trim().replace(/[.,]+$/,'');
+  }
+
   const utgaMatch = text.match(/Гүйлгээний утга[:\s]*([^\n]+)/i);
   if(utgaMatch){
     const parts = utgaMatch[1].split(':');
