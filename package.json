@@ -1,0 +1,14 @@
+{
+  "name": "ledger-backend",
+  "version": "1.0.0",
+  "description": "Gmail receipt sync backend for the Ledger spending tracker",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "googleapis": "^140.0.0"
+  }
+}
