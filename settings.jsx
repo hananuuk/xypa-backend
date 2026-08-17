@@ -23,17 +23,17 @@ function Seg({ options, value, onChange }) {
 }
 
 function CategorySettings({ cat, group, onSave, onDelete, onClose }) {
+  const swipe = useSwipeBack(onClose || (() => {}));
+  const [name, setName] = React.useState(cat ? cat.name : '');
+  const [color, setColor] = React.useState(cat ? cat.color : null);
+  const [assigned, setAssigned] = React.useState(cat ? String(cat.assigned) : '');
+  const [tType, setTType] = React.useState(cat && cat.target ? cat.target.type : 'none');
+  const [tAmt, setTAmt] = React.useState(cat && cat.target ? String(cat.target.amount) : '');
+  const [tBy, setTBy] = React.useState(cat && cat.target && cat.target.by ? cat.target.by : '');
+  const [note, setNote] = React.useState(cat ? (cat.note || '') : '');
+  const [confirmDel, setConfirmDel] = React.useState(false);
   if (!cat) return null;
   const famKeys = familyKeys(groupFamily(group));
-
-  const [name, setName] = React.useState(cat.name);
-  const [color, setColor] = React.useState(cat.color);
-  const [assigned, setAssigned] = React.useState(String(cat.assigned));
-  const [tType, setTType] = React.useState(cat.target ? cat.target.type : 'none');
-  const [tAmt, setTAmt] = React.useState(cat.target ? String(cat.target.amount) : '');
-  const [tBy, setTBy] = React.useState(cat.target && cat.target.by ? cat.target.by : '');
-  const [note, setNote] = React.useState(cat.note || '');
-  const [confirmDel, setConfirmDel] = React.useState(false);
 
   const save = () => {
     let target = null;
@@ -51,7 +51,7 @@ function CategorySettings({ cat, group, onSave, onDelete, onClose }) {
   };
 
   return (
-    <div className="detail settings" data-screen-label="Category settings">
+    <div className="detail settings" data-screen-label="Category settings" style={swipe.style} {...swipe.handlers}>
       <header className="detail-top">
         <button className="detail-back" onClick={onClose} aria-label="Cancel">&lsaquo;</button>
         <h2>Edit category</h2>
@@ -72,8 +72,8 @@ function CategorySettings({ cat, group, onSave, onDelete, onClose }) {
         <section className="form-sec">
           <span className="field-label">Assigned this month</span>
           <div className="amount-input">
-            <input className="field-input" type="number" inputMode="numeric" value={assigned}
-              onChange={(e) => setAssigned(e.target.value)} />
+            <MoneyInput className="field-input" value={assigned}
+              onChange={setAssigned} />
             <span className="amount-cur">{'\u20ae'}</span>
           </div>
           <div className="field-hint">Last month you assigned {fmtMoney(cat.prevAssigned || 0)}</div>
@@ -85,8 +85,8 @@ function CategorySettings({ cat, group, onSave, onDelete, onClose }) {
             options={[{ v: 'none', label: 'None' }, { v: 'monthly', label: 'Monthly' }, { v: 'date', label: 'By date' }]} />
           {tType !== 'none' && (
             <div className="amount-input" style={{ marginTop: 10 }}>
-              <input className="field-input" type="number" inputMode="numeric" value={tAmt} placeholder="0"
-                onChange={(e) => setTAmt(e.target.value)} />
+              <MoneyInput className="field-input" value={tAmt} placeholder="0"
+                onChange={setTAmt} />
               <span className="amount-cur">{'\u20ae'}</span>
             </div>
           )}
@@ -118,7 +118,6 @@ function CategorySettings({ cat, group, onSave, onDelete, onClose }) {
 }
 
 function AddCategoryModal({ open, groups, initialGroupId, onAdd, onClose }) {
-  if (!open) return null;
   const [groupId, setGroupId] = React.useState(initialGroupId || (groups[0] && groups[0].id));
   const group = groups.find((g) => g.id === groupId) || groups[0];
   const famKeys = familyKeys(groupFamily(group));
@@ -138,6 +137,16 @@ function AddCategoryModal({ open, groups, initialGroupId, onAdd, onClose }) {
       setColor(fk.find((k) => !u.includes(k)) || fk[0]);
     }
   }, [groupId]);
+
+  // reset the form each time it's freshly opened
+  React.useEffect(() => {
+    if (open) {
+      setGroupId(initialGroupId || (groups[0] && groups[0].id));
+      setName(''); setAssigned(''); setTargetOn(false);
+    }
+  }, [open]);
+
+  if (!open) return null;
 
   const amt = parseInt(assigned, 10) || 0;
   const valid = name.trim().length > 0;
@@ -182,8 +191,8 @@ function AddCategoryModal({ open, groups, initialGroupId, onAdd, onClose }) {
         <section className="form-sec">
           <span className="field-label">Assign now (optional)</span>
           <div className="amount-input">
-            <input className="field-input" type="number" inputMode="numeric" value={assigned} placeholder="0"
-              onChange={(e) => setAssigned(e.target.value)} />
+            <MoneyInput className="field-input" value={assigned} placeholder="0"
+              onChange={setAssigned} />
             <span className="amount-cur">{'\u20ae'}</span>
           </div>
           <label className="check-row">

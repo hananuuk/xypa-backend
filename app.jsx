@@ -41,6 +41,7 @@ function App() {
   const [groupEditId, setGroupEditId] = useState(null);
   const [activeTab, setActiveTab] = useState('plan');
   const [incomeOpen, setIncomeOpen] = useState(false);
+  const [hideAmount, setHideAmount] = useState(false);
   const [gmailStatus, setGmailStatus] = useState({ mode: 'checking', text: 'Checking Gmail…' });
   const dragSuppress = useRef(false);
 
@@ -134,7 +135,7 @@ function App() {
     });
   };
   const startCatDrag = (groupId) => (wrapEl, point) =>
-    beginReorder(wrapEl, point, { itemSelector: '.pill-wrap', gap: 0, lift: 1.04,
+    beginReorder(wrapEl, point, { itemSelector: '.pill-wrap', gap: 10, lift: 1.04,
       onCommit: (f, tx) => onReorderCat(groupId, f, tx) });
   const startGroupDrag = (point) => {
     dragSuppress.current = true;
@@ -190,6 +191,8 @@ function App() {
     if (data.assigned > 0) setTba((v) => Math.round((v - data.assigned) * 100) / 100);
   };
 
+  const onAddAccount = (account) => setAccounts((prev) => [...prev, account]);
+
   const onAddGroup = (name, family) => {
     setGroups((prev) => [...prev, { id: 'grp' + Date.now(), name, family: family || 'b', cats: [] }]);
   };
@@ -240,11 +243,15 @@ function App() {
   const addGroup = useMemo(() => groups.find((g) => g.id === addGroupId) || null, [groups, addGroupId]);
   const groupEdit = useMemo(() => groups.find((g) => g.id === groupEditId) || null, [groups, groupEditId]);
 
-  // ================= Gmail sync (automatic, no manual button) =================
+  // ================= Gmail sync (automatic; new finds are held for review) =================
   const groupsRef = useRef(groups);
   useEffect(() => { groupsRef.current = groups; }, [groups]);
   const importedRef = useRef(importedGmailIds);
   useEffect(() => { importedRef.current = importedGmailIds; }, [importedGmailIds]);
+  const [pendingSync, setPendingSync] = useState([]);
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const pendingRef = useRef(pendingSync);
+  useEffect(() => { pendingRef.current = pendingSync; }, [pendingSync]);
 
   function timeAgo(date) {
     const mins = Math.round((Date.now() - date.getTime()) / 60000);
@@ -256,6 +263,7 @@ function App() {
   }
 
   const syncGmail = async () => {
+    setGmailStatus({ mode: 'syncing', text: 'Syncing…' });
     try {
       const res = await fetch(BACKEND_URL + '/api/sync');
       if (res.status === 401) {
@@ -265,31 +273,23 @@ function App() {
       if (!res.ok) throw new Error('sync failed');
       const data = await res.json();
       const already = importedRef.current;
-      const fresh = (data.transactions || []).filter((tx) => !already.has(tx.gmailId));
+      const pendingIds = new Set(pendingRef.current.map((p) => p.gmailId));
+      const fresh = (data.transactions || []).filter((tx) => !already.has(tx.gmailId) && !pendingIds.has(tx.gmailId));
 
       if (fresh.length > 0) {
-        setGroups((prev) => {
-          let next = prev;
-          fresh.forEach((tx) => {
-            const catId = categorizeForSync(tx.merchant, next);
-            if (!catId) return;
-            next = next.map((g) => ({
-              ...g,
-              cats: g.cats.map((c) => (c.id === catId
-                ? { ...c, txns: [...c.txns, { kind: 'spend', date: tx.date ? todayLabel(new Date(tx.date)) : 'Today', payee: tx.merchant, amount: tx.amount, gmailId: tx.gmailId }] }
-                : c)),
-            }));
-          });
-          return next;
-        });
-        setImportedGmailIds((prev) => {
-          const next = new Set(prev);
-          fresh.forEach((tx) => next.add(tx.gmailId));
-          return next;
-        });
+        setPendingSync((prev) => [
+          ...prev,
+          ...fresh.map((tx) => ({
+            gmailId: tx.gmailId,
+            merchant: tx.merchant,
+            amount: tx.amount,
+            date: tx.date,
+            categoryId: categorizeForSync(tx.merchant, groupsRef.current),
+          })),
+        ]);
       }
 
-      setGmailStatus({ mode: 'on', text: `synced ${timeAgo(new Date())}${fresh.length ? ` · ${fresh.length} new` : ''}` });
+      setGmailStatus({ mode: 'on', text: `synced ${timeAgo(new Date())}` });
     } catch (e) {
       console.error(e);
       setGmailStatus({ mode: 'off', text: 'sync-failed' });
@@ -311,6 +311,33 @@ function App() {
     }
   };
 
+  const onConfirmSync = (rows) => {
+    setGroups((prev) => {
+      let next = prev;
+      rows.forEach((r) => {
+        next = next.map((g) => ({
+          ...g,
+          cats: g.cats.map((c) => (c.id === r.categoryId
+            ? { ...c, txns: [...c.txns, { kind: 'spend', date: r.date ? todayLabel(new Date(r.date)) : 'Today', payee: r.merchant, amount: r.amount, gmailId: r.gmailId }] }
+            : c)),
+        }));
+      });
+      return next;
+    });
+    setImportedGmailIds((prev) => {
+      const next = new Set(prev);
+      rows.forEach((r) => next.add(r.gmailId));
+      return next;
+    });
+    setPendingSync((prev) => prev.filter((p) => !rows.some((r) => r.gmailId === p.gmailId)));
+    setReviewOpen(false);
+  };
+
+  const onSkipSync = (gmailId) => {
+    setImportedGmailIds((prev) => new Set(prev).add(gmailId));
+    setPendingSync((prev) => prev.filter((p) => p.gmailId !== gmailId));
+  };
+
   useEffect(() => {
     checkGmailAndSync();
     const syncInterval = setInterval(checkGmailAndSync, 3 * 60 * 1000);
@@ -320,19 +347,39 @@ function App() {
     return () => { clearInterval(syncInterval); clearInterval(tickInterval); };
   }, []);
 
+  // keep bottom sheets clear of the on-screen keyboard
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const onResize = () => {
+      const kb = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+      document.documentElement.style.setProperty('--kb-inset', kb + 'px');
+    };
+    vv.addEventListener('resize', onResize);
+    vv.addEventListener('scroll', onResize);
+    onResize();
+    return () => { vv.removeEventListener('resize', onResize); vv.removeEventListener('scroll', onResize); };
+  }, []);
+
   const statusText = gmailStatus.text === 'not-connected'
     ? <>Gmail not connected · <a href={BACKEND_URL + '/auth/login'} target="_blank" rel="noopener">Connect</a></>
     : gmailStatus.text === 'sync-failed' ? 'Sync failed — will retry shortly'
     : gmailStatus.text === 'unreachable' ? 'Could not reach the sync server'
+    : gmailStatus.text === 'Syncing…' ? gmailStatus.text
     : gmailStatus.text === 'Checking Gmail…' ? gmailStatus.text
     : `Connected · ${gmailStatus.text}`;
 
   return (
     <div className="screen">
       <div className="gmail-pill">
-        <span className={'gmail-dot' + (gmailStatus.mode === 'on' ? ' on' : gmailStatus.mode === 'off' ? ' off' : '')} />
+        <span className={'gmail-dot' + (gmailStatus.mode === 'on' ? ' on' : gmailStatus.mode === 'off' ? ' off' : gmailStatus.mode === 'syncing' ? ' syncing' : '')} />
         <span>{statusText}</span>
       </div>
+      {pendingSync.length > 0 && (
+        <button className="sync-banner" onClick={() => setReviewOpen(true)}>
+          {pendingSync.length} new transaction{pendingSync.length !== 1 ? 's' : ''} synced · tap to review
+        </button>
+      )}
 
       {activeTab === 'plan' && (
       <header className="plan-head">
@@ -341,9 +388,14 @@ function App() {
           <span>{monthLabel}</span>
         </div>
 
-        <div className={'tba' + (tba < 0 ? ' tba--neg' : '')} onClick={() => setIncomeOpen(true)} style={{ cursor: 'pointer' }}>
-          <div className="tba-amount">{fmtMoney(tba)}</div>
-          <div className="tba-label">{tba < 0 ? 'Over-assigned' : 'To Be Assigned'}</div>
+        <div className={'tba' + (tba < 0 ? ' tba--neg' : '')}>
+          <div className="tba-amount-row">
+            <div className="tba-amount" onClick={() => setIncomeOpen(true)}>{hideAmount ? '••••••' : fmtMoney(tba)}</div>
+            <button className="tba-eye" onClick={(e) => { e.stopPropagation(); setHideAmount((v) => !v); }} aria-label={hideAmount ? 'Show amount' : 'Hide amount'}>
+              {hideAmount ? '\u25CE' : '\u25C9'}
+            </button>
+          </div>
+          <div className="tba-label" onClick={() => setIncomeOpen(true)}>{tba < 0 ? 'Over-assigned' : 'To Be Assigned'}</div>
         </div>
       </header>
       )}
@@ -394,7 +446,7 @@ function App() {
           onCompleteGoal={onCompleteGoal} onDeleteGoal={onDeleteGoal} onReorderGoal={onReorderGoal} />
       )}
       {activeTab === 'reflect' && <ReflectScreen groups={groups} income={income} monthHistory={monthHistory} monthLabel={monthLabel} />}
-      {activeTab === 'accounts' && <AccountsScreen accounts={accounts} />}
+      {activeTab === 'accounts' && <AccountsScreen accounts={accounts} onAddAccount={onAddAccount} />}
 
       {t.showNav && (
         <nav className="tabbar">
@@ -441,6 +493,9 @@ function App() {
       {incomeOpen && (
         <IncomeSheet current={income} onSave={(v) => { setIncome(v); setIncomeOpen(false); }} onClose={() => setIncomeOpen(false)} />
       )}
+      {reviewOpen && (
+        <SyncReviewSheet items={pendingSync} groups={groups} onConfirm={onConfirmSync} onSkip={onSkipSync} onClose={() => setReviewOpen(false)} />
+      )}
     </div>
   );
 }
@@ -448,15 +503,20 @@ function App() {
 function IncomeSheet({ current, onSave, onClose }) {
   const [val, setVal] = React.useState(current ? String(current) : '');
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'flex-end', zIndex: 50 }} onClick={onClose}>
-      <div style={{ background: '#161618', width: '100%', borderRadius: '20px 20px 0 0', padding: '20px 20px 28px' }} onClick={(e) => e.stopPropagation()}>
-        <div style={{ fontSize: 17, fontWeight: 800, color: '#f4f4f5', marginBottom: 4 }}>Monthly income</div>
-        <div style={{ fontSize: 13, color: '#8a8a90', marginBottom: 14, lineHeight: 1.5 }}>Used for the Reflect dashboard — how much of your income is spent, saved, or left over.</div>
-        <input type="number" inputMode="decimal" value={val} onChange={(e) => setVal(e.target.value)}
-          placeholder="3400000"
-          style={{ width: '100%', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '11px 12px', fontSize: 17, color: '#f4f4f5', fontFamily: 'Archivo, sans-serif', marginBottom: 14 }} />
-        <button onClick={() => onSave(parseInt(val, 10) || 0)}
-          style={{ width: '100%', background: '#f4f4f5', color: '#0b0b0c', border: 'none', borderRadius: 10, padding: '13px 0', fontSize: 15, fontWeight: 800, cursor: 'pointer' }}>Save</button>
+    <div className="sheet-scrim" onClick={onClose}>
+      <div className="sheet" onClick={(e) => e.stopPropagation()}>
+        <div className="sheet-grip" />
+        <div className="sheet-head">
+          <h2>Monthly income</h2>
+          <button className="sheet-x" onClick={onClose} aria-label="Close">&times;</button>
+        </div>
+        <div className="add-cat" style={{ marginBottom: 14 }}>Used for the Reflect dashboard — how much of your income is spent, saved, or left over.</div>
+        <label className="field">
+          <span className="field-label">Amount</span>
+          <MoneyInput value={val} onChange={setVal} placeholder="3,400,000" className="field-input" autoFocus />
+        </label>
+        <button className="save-btn" style={{ background: '#f4f4f5', color: '#0b0b0c' }}
+          onClick={() => onSave(parseInt(val, 10) || 0)}>Save</button>
       </div>
     </div>
   );

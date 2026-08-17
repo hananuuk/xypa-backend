@@ -1,6 +1,77 @@
 // accounts.jsx — light Accounts tab: net worth + list of accounts with balances.
 
-function AccountsScreen({ accounts }) {
+const ACCOUNT_KINDS = ['Checking', 'Savings', 'Cash', 'Credit'];
+
+function AddAccountModal({ open, onAdd, onClose }) {
+  const [name, setName] = React.useState('');
+  const [kind, setKind] = React.useState('Checking');
+  const [balance, setBalance] = React.useState('');
+  const [color, setColor] = React.useState(GOAL_COLORS[0]);
+
+  if (!open) return null;
+
+  const isDebt = kind === 'Credit';
+  const save = () => {
+    const raw = parseInt(balance, 10) || 0;
+    onAdd({
+      id: 'acct' + Date.now(),
+      name: name.trim() || kind,
+      kind,
+      balance: isDebt ? -Math.abs(raw) : Math.abs(raw),
+      color,
+    });
+    setName(''); setBalance(''); setKind('Checking'); setColor(GOAL_COLORS[0]);
+    onClose();
+  };
+
+  return (
+    <div className="sheet-scrim" onClick={onClose}>
+      <div className="sheet" onClick={(e) => e.stopPropagation()}>
+        <div className="sheet-grip" />
+        <div className="sheet-head">
+          <h2>Add account</h2>
+          <button className="sheet-x" onClick={onClose} aria-label="Close">&times;</button>
+        </div>
+
+        <label className="field">
+          <span className="field-label">Name</span>
+          <input className="field-input" type="text" value={name} placeholder="e.g. Khan Bank · Checking"
+            onChange={(e) => setName(e.target.value)} autoFocus />
+        </label>
+
+        <span className="field-label">Type</span>
+        <div className="swatch-row" style={{ marginBottom: 14 }}>
+          {ACCOUNT_KINDS.map((k) => (
+            <button key={k} type="button"
+              className={'seg-btn' + (k === kind ? ' seg-btn--on' : '')}
+              style={{ padding: '8px 12px', borderRadius: 10 }}
+              onClick={() => setKind(k)}>{k}</button>
+          ))}
+        </div>
+
+        <label className="field">
+          <span className="field-label">{isDebt ? 'Amount owed' : 'Balance'}</span>
+          <MoneyInput className="field-input" value={balance} placeholder="0" onChange={setBalance} />
+        </label>
+
+        <span className="field-label">Color</span>
+        <div className="swatch-row" style={{ marginBottom: 18 }}>
+          {GOAL_COLORS.map((c) => (
+            <button key={c} type="button" className={'swatch' + (c === color ? ' swatch--on' : '')}
+              style={{ background: c }} onClick={() => setColor(c)} aria-label={'color ' + c} />
+          ))}
+        </div>
+
+        <button className="save-btn" style={{ background: color, color: '#15130a' }} onClick={save}>
+          Add account
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function AccountsScreen({ accounts, onAddAccount }) {
+  const [addOpen, setAddOpen] = React.useState(false);
   const net = accounts.reduce((s, a) => s + a.balance, 0);
   const cash = accounts.filter((a) => a.balance >= 0).reduce((s, a) => s + a.balance, 0);
   const debt = accounts.filter((a) => a.balance < 0).reduce((s, a) => s + a.balance, 0);
@@ -35,10 +106,13 @@ function AccountsScreen({ accounts }) {
             No accounts yet.
           </div>
         )}
-        <button className="acct-add">+ Link an account</button>
+        <button className="acct-add" onClick={() => setAddOpen(true)}>+ Add an account</button>
       </div>
+
+      <AddAccountModal open={addOpen} onAdd={onAddAccount} onClose={() => setAddOpen(false)} />
     </main>
   );
 }
 
 Object.assign(window, { AccountsScreen });
+

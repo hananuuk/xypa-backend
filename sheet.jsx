@@ -53,6 +53,7 @@ function ActRow({ x, pal }) {
 }
 
 function DetailScreen({ cat, t, onAddOpen, onMove, onEdit, onClose }) {
+  const swipe = useSwipeBack(onClose || (() => {}));
   if (!cat) return null;
   const pal = PALETTE[cat.color] || PALETTE.g1;
   const spent = spentOf(cat);
@@ -79,7 +80,7 @@ function DetailScreen({ cat, t, onAddOpen, onMove, onEdit, onClose }) {
   }
 
   return (
-    <div className="detail" data-screen-label="Category detail">
+    <div className="detail" data-screen-label="Category detail" style={swipe.style} {...swipe.handlers}>
       <header className="detail-top">
         <button className="detail-back" onClick={onClose} aria-label="Back">&lsaquo;</button>
         <span className="detail-swatch" style={{ background: overspent ? OVERSPENT.fill : pal.fill }} />
@@ -162,9 +163,12 @@ function Keypad({ onPress }) {
 }
 
 function AddTxnModal({ cat, onSave, onClose }) {
-  if (!cat) return null;
   const [payee, setPayee] = React.useState('');
   const [amount, setAmount] = React.useState('');
+  React.useEffect(() => {
+    if (cat) { setPayee(''); setAmount(''); }
+  }, [cat && cat.id]);
+  if (!cat) return null;
   const amt = parseInt(amount, 10) || 0;
   const valid = amt > 0;
 

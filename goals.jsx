@@ -64,8 +64,8 @@ function GoalCard({ goal, onAdd, onMenu, handlers }) {
 }
 
 function AddToGoalSheet({ goal, tba, onApply, onClose }) {
-  if (!goal) return null;
   const [amt, setAmt] = React.useState('');
+  if (!goal) return null;
   const n = parseInt(amt, 10) || 0;
   const remaining = Math.max(0, goal.target - goal.saved);
   const quick = [100000, 300000, monthlyNeeded(goal)].filter((v, i, a) => v > 0 && a.indexOf(v) === i);
@@ -85,8 +85,8 @@ function AddToGoalSheet({ goal, tba, onApply, onClose }) {
         <section className="form-sec">
           <span className="field-label">Amount</span>
           <div className="amount-input">
-            <input className="field-input" type="number" inputMode="numeric" value={amt} placeholder="0" autoFocus
-              onChange={(e) => setAmt(e.target.value)} />
+            <MoneyInput className="field-input" value={amt} placeholder="0" autoFocus
+              onChange={setAmt} />
             <span className="amount-cur">{'\u20ae'}</span>
           </div>
           <div className="chip-row" style={{ marginTop: 12 }}>
@@ -151,8 +151,8 @@ function NewGoalSheet({ onCreate, onClose }) {
         <section className="form-sec">
           <span className="field-label">Target amount</span>
           <div className="amount-input">
-            <input className="field-input" type="number" inputMode="numeric" value={target} placeholder="0"
-              onChange={(e) => setTarget(e.target.value)} />
+            <MoneyInput className="field-input" value={target} placeholder="0"
+              onChange={setTarget} />
             <span className="amount-cur">{'\u20ae'}</span>
           </div>
         </section>
@@ -187,8 +187,8 @@ function NewGoalSheet({ onCreate, onClose }) {
 }
 
 function GoalActionSheet({ goal, onComplete, onDelete, onClose }) {
-  if (!goal) return null;
   const [confirmDel, setConfirmDel] = React.useState(false);
+  if (!goal) return null;
   const reached = goal.done || goal.saved >= goal.target;
   return (
     <div className="sheet-scrim" onClick={onClose}>

@@ -23,11 +23,8 @@ function MiniBattery({ cat, avail, role }) {
 }
 
 function TransferSheet({ thisCat, mode, allCats, onApply, onClose }) {
-  if (!thisCat) return null;
   const availOf = (c) => c.assigned - spentOf(c);
-
-  const others = allCats.filter((c) => c.id !== thisCat.id);
-  // who can give money: positive available
+  const others = thisCat ? allCats.filter((c) => c.id !== thisCat.id) : [];
   const pickList = mode === 'in' ? others.filter((c) => availOf(c) > 0) : others;
 
   const [otherId, setOtherId] = React.useState(() => {
@@ -39,6 +36,8 @@ function TransferSheet({ thisCat, mode, allCats, onApply, onClose }) {
     return others[0] ? others[0].id : null;
   });
   const [amount, setAmount] = React.useState('');
+
+  if (!thisCat) return null;
 
   const other = allCats.find((c) => c.id === otherId) || null;
   const giver = mode === 'out' ? thisCat : other;
