@@ -17,9 +17,13 @@ app.use(express.json());
 // token: googleapis mints fresh access tokens from it automatically, in
 // memory, on every call — so one small Postgres table is enough.
 // ---------------------------------------------------------------------------
-const pool = process.env.DATABASE_URL
-  ? new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } })
-  : null;
+// Whatever prefix Vercel's "Connect to Project" UI ends up giving this
+// store's env vars (none, "STORAGE_", etc.) — take the first one present.
+const DB_URL = process.env.DATABASE_URL || process.env.POSTGRES_URL
+  || process.env.STORAGE_DATABASE_URL || process.env.STORAGE_POSTGRES_URL
+  || process.env.DATABASE_URL_UNPOOLED || process.env.STORAGE_DATABASE_URL_UNPOOLED;
+
+const pool = DB_URL ? new Pool({ connectionString: DB_URL, ssl: { rejectUnauthorized: false } }) : null;
 
 let schemaReady = null;
 function ensureSchema() {

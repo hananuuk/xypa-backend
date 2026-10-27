@@ -4,7 +4,7 @@
 
 const { useState, useMemo, useRef, useEffect } = React;
 
-const BACKEND_URL = 'https://xypa-backend.onrender.com';
+const BACKEND_URL = 'https://xypa-api-hananuuks-projects.vercel.app';
 
 // Fixed final values from the design handoff — this was a live-editable
 // dev panel in the prototype; the shipped app just uses the chosen settings.
