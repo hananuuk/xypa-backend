@@ -24,14 +24,11 @@ function useSwipeBack(onClose) {
   };
   const onPointerUp = () => {
     const s = start.current;
-    const wasX = s && s.axis === 'x';
+    const shouldClose = s && s.axis === 'x' && dx > 90;
     start.current = null;
-    if (wasX && dx > 90) {
-      onClose();
-      return;
-    }
     setDragging(false);
     setDx(0);
+    if (shouldClose) onClose();
   };
 
   const style = dragging

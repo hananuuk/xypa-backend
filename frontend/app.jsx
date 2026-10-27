@@ -340,11 +340,35 @@ function App() {
 
   useEffect(() => {
     checkGmailAndSync();
-    const syncInterval = setInterval(checkGmailAndSync, 3 * 60 * 1000);
+    const syncInterval = setInterval(checkGmailAndSync, 60 * 60 * 1000); // hourly, per the backend's persistent connection
     const tickInterval = setInterval(() => {
       setGmailStatus((s) => (s.mode === 'on' && s.text.includes('synced') ? { ...s } : s));
     }, 30 * 1000);
-    return () => { clearInterval(syncInterval); clearInterval(tickInterval); };
+
+    // The Gmail "Connect" link opens in a new tab/window for the OAuth flow.
+    // On desktop/most browsers that tab can message us back the instant it's
+    // done (postMessage); re-check the moment that happens.
+    const onMessage = (e) => { if (e.data && e.data.type === 'xypa-gmail-connected') checkGmailAndSync(); };
+    window.addEventListener('message', onMessage);
+
+    // On an installed iOS PWA, tapping that link usually opens a *separate*
+    // Safari process with no relationship back to this app, so postMessage
+    // never arrives — this is the real fix for "I have to close and reopen
+    // the app" after connecting: the instant the app becomes visible again
+    // (user switches back to it, for any reason), re-check right away
+    // instead of waiting for the next scheduled sync.
+    const onVisible = () => { if (document.visibilityState === 'visible') checkGmailAndSync(); };
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('focus', onVisible);
+    window.addEventListener('pageshow', onVisible);
+
+    return () => {
+      clearInterval(syncInterval); clearInterval(tickInterval);
+      window.removeEventListener('message', onMessage);
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('focus', onVisible);
+      window.removeEventListener('pageshow', onVisible);
+    };
   }, []);
 
   // keep bottom sheets clear of the on-screen keyboard
@@ -362,7 +386,7 @@ function App() {
   }, []);
 
   const statusText = gmailStatus.text === 'not-connected'
-    ? <>Gmail not connected · <a href={BACKEND_URL + '/auth/login'} target="_blank" rel="noopener">Connect</a></>
+    ? <>Gmail not connected · <a href={BACKEND_URL + '/auth/login'} target="_blank" rel="noreferrer">Connect</a></>
     : gmailStatus.text === 'sync-failed' ? 'Sync failed — will retry shortly'
     : gmailStatus.text === 'unreachable' ? 'Could not reach the sync server'
     : gmailStatus.text === 'Syncing…' ? gmailStatus.text

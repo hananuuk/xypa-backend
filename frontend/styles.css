@@ -8,7 +8,6 @@
 * { box-sizing: border-box; }
 html, body {
   margin: 0; height: 100%; overflow: hidden;
-  position: fixed; inset: 0;
 }
 body {
   background: var(--bg);
@@ -24,7 +23,7 @@ body {
 .screen {
   position: relative;
   width: 100%;
-  height: 100%;
+  height: 100dvh;
   max-width: 560px;
   margin: 0 auto;
   background: var(--bg);
@@ -262,7 +261,7 @@ body.reorder-active { user-select: none; -webkit-user-select: none; cursor: grab
   animation: slidein .28s cubic-bezier(.2,.8,.2,1);
 }
 @keyframes slidein { from { transform: translateX(100%); } }
-.detail-top { flex: none; display: flex; align-items: center; gap: 12px; padding: 22px 18px 14px; }
+.detail-top { flex: none; display: flex; align-items: center; gap: 12px; padding: calc(env(safe-area-inset-top) + 16px) 18px 14px; }
 .detail-back, .detail-icon-btn {
   background: rgba(255,255,255,0.08); border: none; color: var(--ink);
   width: 38px; height: 38px; border-radius: 50%; cursor: pointer; line-height: 1;

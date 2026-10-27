@@ -116,9 +116,14 @@
   font-family: inherit; font-size: 13px; font-weight: 800; letter-spacing: 0.01em;
   padding: 8px 0; color: #8a8a90; transition: color .2s; }
 .rt-seg-b.on { color: #f4f4f5; }
-.rt-view { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; animation: rtfade .32s ease both; }
+.rt-view { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; display: flex; flex-direction: column; animation: rtfade .32s ease both; }
+.rt-view::-webkit-scrollbar { width: 0; }
 @keyframes rtfade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 .rt .bloom, .rt .flow2 { padding-top: 2px; }
+/* inside the real (scrolling) Reflect screen, let Bloom/Flow size to their natural
+   content instead of stretching to fill — that's what makes the long legend /
+   category list scroll instead of getting clipped by .rt-view's old overflow:hidden */
+.reflect-screen .bloom, .reflect-screen .flow2 { flex: none; min-height: 0; padding-bottom: 16px; }
 
 /* keep the app header + tab bar solid above the viz */
 .reflect-screen .screen-head { position: relative; z-index: 2; background: var(--page, #161618); }
