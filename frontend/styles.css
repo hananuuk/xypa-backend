@@ -212,8 +212,12 @@ body.reorder-active { user-select: none; -webkit-user-select: none; cursor: grab
   padding: 10px 22px calc(30px + env(safe-area-inset-bottom));
   animation: slideup .26s cubic-bezier(.2,.8,.2,1);
   margin-bottom: var(--kb-inset, 0px);
-  transition: margin-bottom .18s ease;
-  max-height: 88vh;
+  transition: margin-bottom .18s ease, max-height .18s ease;
+  /* Cap height against the keyboard AND the top safe area together, so a
+     tall form shrinks and scrolls internally instead of sliding its top
+     edge up past y=0 (which otherwise ends up hidden behind the status
+     bar/clock once the keyboard is open). */
+  max-height: min(88vh, calc(100dvh - env(safe-area-inset-top) - var(--kb-inset, 0px) - 24px));
   overflow-y: auto;
 }
 @keyframes slideup { from { transform: translateY(100%); } }
