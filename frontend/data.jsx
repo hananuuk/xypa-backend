@@ -64,6 +64,13 @@ const B = (amount, by) => ({ type: 'date', amount, by });
 // ---- Seed data: only used the very first time the app runs on a device ----
 const SEED_PLAN_DATA = [
   {
+    id: 'uncategorized', name: 'Uncategorized', family: 'r', standalone: true,
+    cats: [
+      { id: 'other', name: 'Uncategorized', assigned: 0, prevAssigned: 0, color: 'r4',
+        target: null, note: 'Catch-all for synced transactions we could not match to a category.', txns: [] },
+    ],
+  },
+  {
     id: 'bills', name: 'Bills', family: 'g',
     cats: [
       { id: 'rent', name: 'Rent', assigned: 1200000, prevAssigned: 1200000, color: 'g1',
@@ -87,8 +94,6 @@ const SEED_PLAN_DATA = [
         target: M(120000), note: '', txns: [] },
       { id: 'coffee', name: 'Coffee', assigned: 60000, prevAssigned: 55000, color: 'r4',
         target: M(60000), note: '', txns: [] },
-      { id: 'other', name: 'Uncategorized', assigned: 0, prevAssigned: 0, color: 'r4',
-        target: null, note: 'Catch-all for synced transactions we could not match to a category.', txns: [] },
     ],
   },
   {
@@ -183,17 +188,37 @@ function deepCopyGroups(d) {
   return d.map((g) => ({ ...g, cats: g.cats.map((c) => ({ ...c, txns: c.txns.map((x) => ({ ...x })) })) }));
 }
 
+// Older saves kept the "Uncategorized" category nested inside whichever
+// group it first shipped in. Pull it out into its own standalone group
+// (same id/txns — nothing is lost) so it renders on its own, not as a
+// member of some other group.
+function migrateUncategorized(groups) {
+  if (groups.some((g) => g.standalone)) return groups; // already migrated
+  let found = null;
+  const cleaned = groups.map((g) => {
+    const keep = [];
+    for (const c of g.cats) {
+      if (c.id === 'other' && !found) found = c;
+      else keep.push(c);
+    }
+    return { ...g, cats: keep };
+  });
+  if (!found) return groups; // nothing to migrate
+  return [{ id: 'uncategorized', name: 'Uncategorized', family: 'r', standalone: true, cats: [found] }, ...cleaned];
+}
+
 function loadInitialState() {
   const saved = loadStore();
   if (saved) {
     return {
-      groups: saved.groups || deepCopyGroups(SEED_PLAN_DATA),
+      groups: migrateUncategorized(saved.groups || deepCopyGroups(SEED_PLAN_DATA)),
       tba: typeof saved.tba === 'number' ? saved.tba : SEED_TBA,
       goals: saved.goals || SEED_GOALS_DATA.map((g) => ({ ...g })),
       accounts: saved.accounts || SEED_ACCOUNTS_DATA.map((a) => ({ ...a })),
       income: typeof saved.income === 'number' ? saved.income : SEED_INCOME,
       monthHistory: saved.monthHistory || [],
       importedGmailIds: saved.importedGmailIds || [],
+      hideAmount: typeof saved.hideAmount === 'boolean' ? saved.hideAmount : false,
     };
   }
   return {
@@ -204,6 +229,7 @@ function loadInitialState() {
     income: SEED_INCOME,
     monthHistory: [],
     importedGmailIds: [],
+    hideAmount: false,
   };
 }
 
@@ -216,6 +242,7 @@ function persistState(state) {
     income: state.income,
     monthHistory: state.monthHistory,
     importedGmailIds: state.importedGmailIds,
+    hideAmount: state.hideAmount,
   });
 }
 

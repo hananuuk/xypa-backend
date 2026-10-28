@@ -57,7 +57,7 @@ function Pill({ cat, t, onTap, onAdd, onEdit, onReorderStart }) {
     fontFamily: "'Archivo', sans-serif", pointerEvents: 'none',
   };
   const nameStyle = { fontWeight: 800, fontSize: 21, letterSpacing: '-0.01em',
-    whiteSpace: 'nowrap', flexShrink: 0 };
+    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0, flexShrink: 1 };
   const valStyle = { fontWeight: 700, fontSize: 18, letterSpacing: '-0.01em',
     fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', flexShrink: 0, paddingLeft: 12 };
 
@@ -75,9 +75,9 @@ function Pill({ cat, t, onTap, onAdd, onEdit, onReorderStart }) {
     bgStyle = { background: OVERSPENT.fill };
     content = (
       <div style={{ ...rowStyle, color: OVERSPENT.text }}>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
           <span style={nameStyle}>{cat.name}</span>
-          <span className="overspent-badge">OVERSPENT</span>
+          <span className="overspent-badge" style={{ flexShrink: 0 }}>OVERSPENT</span>
         </span>
         <span style={valStyle}>{valueText}</span>
       </div>

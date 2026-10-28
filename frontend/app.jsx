@@ -41,7 +41,7 @@ function App() {
   const [groupEditId, setGroupEditId] = useState(null);
   const [activeTab, setActiveTab] = useState('plan');
   const [incomeOpen, setIncomeOpen] = useState(false);
-  const [hideAmount, setHideAmount] = useState(false);
+  const [hideAmount, setHideAmount] = useState(() => initial.hideAmount);
   const [gmailStatus, setGmailStatus] = useState({ mode: 'checking', text: 'Checking Gmail…' });
   const dragSuppress = useRef(false);
 
@@ -52,8 +52,9 @@ function App() {
     persistState({
       groups, tba, goals, accounts, income, monthHistory,
       importedGmailIds: Array.from(importedGmailIds),
+      hideAmount,
     });
-  }, [groups, tba, goals, accounts, income, monthHistory, importedGmailIds]);
+  }, [groups, tba, goals, accounts, income, monthHistory, importedGmailIds, hideAmount]);
 
   // ---- goals ----
   const onAddToGoal = (id, amt) => {
@@ -230,6 +231,13 @@ function App() {
   }, [groups, addForId]);
 
   const allCats = useMemo(() => groups.flatMap((g) => g.cats), [groups]);
+  const uncategorizedCat = useMemo(() => {
+    const g = groups.find((g) => g.standalone);
+    return g ? g.cats[0] : null;
+  }, [groups]);
+  // groups a person can actually file a new category into — Uncategorized
+  // is a catch-all, not a pickable destination
+  const pickableGroups = useMemo(() => groups.filter((g) => !g.standalone), [groups]);
   const transferCat = useMemo(() => {
     if (!transfer) return null;
     for (const g of groups) for (const c of g.cats) if (c.id === transfer.id) return c;
@@ -428,7 +436,17 @@ function App() {
 
       {activeTab === 'plan' && (
       <main className="plan-list">
-        {groups.map((g) => {
+        {uncategorizedCat && (
+          <section className="group group--standalone">
+            <div className="group-pills">
+              <Pill cat={uncategorizedCat} t={t}
+                onTap={() => setSelId(uncategorizedCat.id)}
+                onAdd={() => setAddForId(uncategorizedCat.id)}
+                onEdit={() => setSettingsId(uncategorizedCat.id)} />
+            </div>
+          </section>
+        )}
+        {groups.filter((g) => !g.standalone).map((g) => {
           const avail = g.cats.reduce((s, c) => s + (c.assigned - spentOf(c)), 0);
           const isOpen = !collapsed[g.id];
           const lp = makeLongPress({ onTrigger: startGroupDrag });
@@ -499,11 +517,11 @@ function App() {
         <CategorySettings cat={settingsRef.cat} group={settingsRef.group}
           onSave={onSaveCategory} onDelete={onDeleteCategory} onClose={() => setSettingsId(null)} />
       )}
-      <AddCategoryModal open={addGroupId != null} groups={groups} initialGroupId={addGroupId}
+      <AddCategoryModal open={addGroupId != null} groups={pickableGroups} initialGroupId={addGroupId}
         onAdd={onAddCategory} onClose={() => setAddGroupId(null)} />
       {addMenuOpen && (
         <AddMenu
-          onCategory={() => { setAddMenuOpen(false); setAddGroupId(groups[0].id); }}
+          onCategory={() => { setAddMenuOpen(false); setAddGroupId(pickableGroups[0].id); }}
           onGroup={() => { setAddMenuOpen(false); setNewGroupOpen(true); }}
           onClose={() => setAddMenuOpen(false)} />
       )}
