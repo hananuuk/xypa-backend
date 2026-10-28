@@ -177,24 +177,44 @@ function stripHtml(text) {
 // two shapes:
 //   "Гүйлгээний утга: 4207********1728:NOMIN SUPERMARKET"   (masked-card prefix)
 //   "Гүйлгээний утга: Ануухан-с илгээв"                      (peer-to-peer, no card)
-// So: take everything after the LABEL's own colon; if THAT still contains a
-// colon (the masked-card case), take everything after the last one; otherwise
-// the captured text already IS the merchant name.
-function extractMerchant(fromHeader, subject, cleanBody) {
+// The first shape tells us which card was used (the masked number before the
+// colon) as well as the merchant. The second shape is a peer-to-peer
+// transfer — there's no separate account-number field in these alerts, just
+// this one phrase, which is also the closest thing to a "who" we get, so we
+// keep it verbatim as `detail` for display (it already reads naturally,
+// e.g. "Ануухан-с илгээв" = "sent by Anuukhan").
+function cleanupText(s) {
+  return s.replace(/\s+/g, ' ').replace(/[.,]+$/, '').trim();
+}
+
+function extractTxnDetail(fromHeader, subject, cleanBody) {
   const labelMatch = cleanBody.match(/Гүйлгээний утга\s*[:：]\s*([^\n\r]+)/);
   if (labelMatch) {
-    let value = labelMatch[1].trim();
-    const idx = Math.max(value.lastIndexOf(':'), value.lastIndexOf('：'));
-    if (idx !== -1) value = value.slice(idx + 1).trim();
-    value = value.replace(/\s+/g, ' ').replace(/[.,]+$/, '');
-    if (value) return value.slice(0, 60);
+    const raw = labelMatch[1].trim();
+    const idx = Math.max(raw.lastIndexOf(':'), raw.lastIndexOf('：'));
+    if (idx !== -1) {
+      const cardPart = raw.slice(0, idx).trim();
+      const merchantPart = cleanupText(raw.slice(idx + 1));
+      // only treat the prefix as a card if it actually looks like a masked
+      // card number (digits/asterisks/dots), not just any text that
+      // happened to contain a colon
+      if (/^[\d*•\s]{6,}$/.test(cardPart) && merchantPart) {
+        return { merchant: merchantPart.slice(0, 60), card: cardPart.replace(/\s+/g, ''), detail: merchantPart };
+      }
+    }
+    const value = cleanupText(raw);
+    if (value) return { merchant: value.slice(0, 60), card: null, detail: value };
   }
 
   // fall back to the generic masked-card pattern for formats without the label
-  const m = cleanBody.match(/\d[\d*•\s]{6,}\d\s*:\s*([A-Za-zА-Яа-яЁёӨөҮү][A-Za-zА-Яа-яЁёӨөҮү0-9 .,&'\-]{1,39})/);
-  if (m) return m[1].trim().replace(/\s+/g, ' ').replace(/[.,]+$/, '');
+  const m = cleanBody.match(/(\d[\d*•\s]{6,}\d)\s*:\s*([A-Za-zА-Яа-яЁёӨөҮү][A-Za-zА-Яа-яЁёӨөҮү0-9 .,&'\-]{1,39})/);
+  if (m) {
+    const merchant = cleanupText(m[2]);
+    return { merchant, card: m[1].replace(/\s+/g, ''), detail: merchant };
+  }
 
-  return fromHeader.replace(/<.*>/, '').replace(/"/g, '').trim() || subject.slice(0, 40);
+  const fallback = fromHeader.replace(/<.*>/, '').replace(/"/g, '').trim() || subject.slice(0, 40);
+  return { merchant: fallback, card: null, detail: null };
 }
 
 function decodeBody(payload) {
@@ -236,11 +256,13 @@ app.get('/api/sync', (req, res) => withAuth(res, async () => {
     const amount = findBestAmount(subject + '\n' + cleanBody);
     if (amount === null) { skippedNoAmount++; continue; }
 
-    const merchant = extractMerchant(fromHeader, subject, cleanBody);
+    const { merchant, card, detail } = extractTxnDetail(fromHeader, subject, cleanBody);
 
     results.push({
       gmailId: m.id,
       merchant,
+      card,
+      detail,
       subject,
       amount,
       date: dateHeader ? new Date(dateHeader).toISOString().slice(0, 10) : null,

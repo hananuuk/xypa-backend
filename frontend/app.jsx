@@ -282,6 +282,8 @@ function App() {
           ...fresh.map((tx) => ({
             gmailId: tx.gmailId,
             merchant: tx.merchant,
+            card: tx.card,
+            detail: tx.detail,
             amount: tx.amount,
             date: tx.date,
             categoryId: categorizeForSync(tx.merchant, groupsRef.current),
@@ -318,7 +320,7 @@ function App() {
         next = next.map((g) => ({
           ...g,
           cats: g.cats.map((c) => (c.id === r.categoryId
-            ? { ...c, txns: [...c.txns, { kind: 'spend', date: r.date ? todayLabel(new Date(r.date)) : 'Today', payee: r.merchant, amount: r.amount, gmailId: r.gmailId }] }
+            ? { ...c, txns: [...c.txns, { kind: 'spend', date: r.date ? todayLabel(new Date(r.date)) : 'Today', payee: r.merchant, amount: r.amount, gmailId: r.gmailId, card: r.card || null, detail: r.detail || null }] }
             : c)),
         }));
       });

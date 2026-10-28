@@ -26,7 +26,7 @@ function buildActivity(cat) {
   return rows.reverse(); // newest first
 }
 
-function ActRow({ x, pal }) {
+function ActRow({ x, pal, onTap }) {
   let icon, iconBg, iconColor, title, amtClass, sign;
   if (x.kind === 'assign') {
     icon = '\u2191'; iconBg = 'rgba(155,227,111,0.16)'; iconColor = '#9be36f';
@@ -41,19 +41,78 @@ function ActRow({ x, pal }) {
     title = x.payee; amtClass = ''; sign = '\u2212';
   }
   return (
-    <div className="act">
+    <button type="button" className="act act--tap" onClick={() => onTap && onTap(x)}>
       <span className="act-icon" style={{ background: iconBg, color: iconColor }}>{icon}</span>
       <div className="act-main">
         <div className="act-title">{title}</div>
         <div className="act-sub">{x.date} {'\u00b7'} Available {fmtMoney(x.after)}</div>
       </div>
       <div className={'act-amt' + amtClass}>{sign}{fmtMoney(x.amount)}</div>
+    </button>
+  );
+}
+
+// Masked card numbers come back as something like "4207********1728" or
+// "4207****1728" \u2014 show it the way a bank statement would: "\u2022\u2022\u2022\u2022 1728".
+function formatCard(card) {
+  if (!card) return null;
+  const last4 = card.replace(/[^0-9]/g, '').slice(-4);
+  return last4 ? '\u2022\u2022\u2022\u2022 ' + last4 : card;
+}
+
+function TxnDetailSheet({ txn, onClose }) {
+  if (!txn) return null;
+  const isSpend = txn.kind === 'spend';
+  const title = isSpend ? txn.payee : (txn.kind === 'assign' ? 'Assigned' : (txn.dir === 'in' ? 'Moved from ' + txn.other : 'Moved to ' + txn.other));
+  const card = isSpend ? formatCard(txn.card) : null;
+  // only show "Details" when it says something beyond the title itself
+  const extraDetail = isSpend && txn.detail && txn.detail.trim() !== (txn.payee || '').trim() ? txn.detail : null;
+
+  return (
+    <div className="sheet-scrim" onClick={onClose}>
+      <div className="sheet" onClick={(e) => e.stopPropagation()}>
+        <div className="sheet-grip" />
+        <div className="sheet-head">
+          <h2>Transaction</h2>
+          <button className="sheet-x" onClick={onClose} aria-label="Close">&times;</button>
+        </div>
+
+        <div className="txn-detail-amt">{txn.kind === 'spend' ? '\u2212' : ''}{fmtMoney(txn.amount)}</div>
+        <div className="txn-detail-title">{title}</div>
+
+        <div className="txn-detail-rows">
+          <div className="txn-detail-row">
+            <span className="field-label">Date</span>
+            <span>{txn.date}</span>
+          </div>
+          {card && (
+            <div className="txn-detail-row">
+              <span className="field-label">Card</span>
+              <span>{card}</span>
+            </div>
+          )}
+          {extraDetail && (
+            <div className="txn-detail-row txn-detail-row--block">
+              <span className="field-label">Details</span>
+              <span>{extraDetail}</span>
+            </div>
+          )}
+          {isSpend && !card && !extraDetail && (
+            <div className="txn-detail-row">
+              <span className="field-label">Details</span>
+              <span style={{ color: 'var(--muted)' }}>Nothing more than this \u2014 added manually or the email didn't include more.</span>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
 
 function DetailScreen({ cat, t, onAddOpen, onMove, onEdit, onClose }) {
   const swipe = useSwipeBack(onClose || (() => {}));
+  const [openTxn, setOpenTxn] = React.useState(null);
+  React.useEffect(() => { setOpenTxn(null); }, [cat && cat.id]);
   if (!cat) return null;
   const pal = PALETTE[cat.color] || PALETTE.g1;
   const spent = spentOf(cat);
@@ -139,10 +198,12 @@ function DetailScreen({ cat, t, onAddOpen, onMove, onEdit, onClose }) {
           </div>
           {activity.length === 0 && <div className="activity-empty">No activity yet this month.</div>}
           <div className="activity-list">
-            {activity.map((x, i) => <ActRow key={i} x={x} pal={pal} />)}
+            {activity.map((x, i) => <ActRow key={i} x={x} pal={pal} onTap={setOpenTxn} />)}
           </div>
         </div>
       </div>
+
+      <TxnDetailSheet txn={openTxn} onClose={() => setOpenTxn(null)} />
     </div>);
 
 }
@@ -222,4 +283,4 @@ function AddTxnModal({ cat, onSave, onClose }) {
 
 }
 
-Object.assign(window, { DetailScreen, AddTxnModal, Keypad });
+Object.assign(window, { DetailScreen, AddTxnModal, Keypad, TxnDetailSheet });
