@@ -21,10 +21,12 @@ body {
 
 /* ---- the screen (fills the real device viewport) ---- */
 .screen {
-  position: relative;
+  /* Pinned to all four edges of the real viewport instead of a computed
+     height, so whatever the device/mode (Safari tab, home-screen app, any
+     phone size) the tab bar is always glued to the true bottom edge. */
+  position: fixed;
+  top: 0; bottom: 0; left: 0; right: 0;
   width: 100%;
-  height: 100vh; /* fallback for WebViews without dvh support */
-  height: 100dvh;
   max-width: 560px;
   margin: 0 auto;
   background: var(--bg);
