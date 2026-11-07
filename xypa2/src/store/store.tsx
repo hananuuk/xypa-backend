@@ -1,0 +1,138 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  applyCover, autoFile, normalizeCover, readyToAssign, refile, viewEnvelopes, everydayLeft, safeToSpend, deleteGoal,
+} from '../logic/budget';
+import type { Account, CoverSource, Envelope, Goal, MerchantRule, Txn } from '../logic/types';
+import { getToday } from './calendar';
+import { seedAccounts, seedEnvelopes, seedGoals, seedRules, seedTxns } from './seed';
+
+const KEY = 'xypa2:state:v1';
+
+export type HomeCard = 'notes' | 'rta' | 'safe' | 'envs';
+export type Checklist = { sort: boolean; cover: boolean; check: boolean; assign: boolean };
+
+export type Persisted = {
+  accounts: Account[]; envelopes: Envelope[]; txns: Txn[]; goals: Goal[]; rules: MerchantRule[];
+  hideAmounts: boolean; homeOrder: HomeCard[]; homeHidden: Partial<Record<HomeCard, boolean>>;
+  checklist: Checklist; envView: 'list' | 'grid';
+};
+
+const defaults = (): Persisted => ({
+  accounts: seedAccounts, envelopes: seedEnvelopes, txns: seedTxns(getToday()), goals: seedGoals, rules: seedRules,
+  hideAmounts: false, homeOrder: ['notes', 'rta', 'safe', 'envs'], homeHidden: {},
+  checklist: { sort: false, cover: false, check: false, assign: false }, envView: 'list',
+});
+
+export type ToastMsg = { id: number; message: string; onUndo?: () => void };
+
+type Store = Persisted & {
+  ready: boolean;
+  today: ReturnType<typeof getToday>;
+  month: string;
+  views: ReturnType<typeof viewEnvelopes>;
+  rta: number;
+  safe: ReturnType<typeof safeToSpend>;
+  unsorted: Txn[];
+  toast: ToastMsg | null;
+  dismissToast: () => void;
+  setHideAmounts: (v: boolean) => void;
+  setEnvView: (v: 'list' | 'grid') => void;
+  markChecklist: (k: keyof Checklist) => void;
+  /** Assign: set new budgets for several envelopes at once. */
+  assign: (budgets: Record<string, number>) => void;
+  cover: (targetId: string, sources: CoverSource[]) => void;
+  addEnvelope: (e: Omit<Envelope, 'id' | 'budget' | 'color'> & { budget?: number }) => void;
+  addTxn: (t: Omit<Txn, 'id' | 'source'>) => void;
+  fileTxn: (txnId: string, envelopeId: string, rule?: boolean) => void;
+  addGoalMoney: (goalId: string, amount: number) => void;
+  removeGoal: (goalId: string) => void;
+  addGoal: (g: Omit<Goal, 'id' | 'saved' | 'addedThisMonth'>) => void;
+  fixBalance: (accountId: string, balance: number) => void;
+  addAccount: (a: Pick<Account, 'name' | 'kind' | 'balance'>) => void;
+  setHomeLayout: (order: HomeCard[], hidden: Partial<Record<HomeCard, boolean>>) => void;
+};
+
+const Ctx = createContext<Store | null>(null);
+export const useStore = () => {
+  const s = useContext(Ctx);
+  if (!s) throw new Error('useStore outside StoreProvider');
+  return s;
+};
+
+export function StoreProvider({ children }: { children: React.ReactNode }) {
+  const [state, setState] = useState<Persisted>(defaults);
+  const [ready, setReady] = useState(false);
+  const [toast, setToast] = useState<ToastMsg | null>(null);
+  const toastId = useRef(0);
+  const today = useMemo(() => getToday(), []);
+
+  useEffect(() => {
+    AsyncStorage.getItem(KEY).then((raw) => {
+      if (raw) { try { setState({ ...defaults(), ...JSON.parse(raw) }); } catch { /* corrupt save: keep defaults */ } }
+    }).finally(() => setReady(true));
+  }, []);
+
+  useEffect(() => {
+    if (ready) AsyncStorage.setItem(KEY, JSON.stringify(state)).catch(() => {});
+  }, [state, ready]);
+
+  const showToast = useCallback((message: string, prev?: Persisted) => {
+    toastId.current += 1;
+    setToast({ id: toastId.current, message, onUndo: prev ? () => setState(prev) : undefined });
+  }, []);
+
+  /** Run an undoable change: snapshot, apply, show a toast with Undo. */
+  const change = useCallback((message: string, fn: (s: Persisted) => Persisted) => {
+    setState((cur) => { const next = fn(cur); showToast(message, cur); return next; });
+  }, [showToast]);
+
+  const month = today.month;
+  const views = useMemo(() => viewEnvelopes(state.envelopes, state.txns, month), [state.envelopes, state.txns, month]);
+  const rta = useMemo(() => readyToAssign(state.accounts, views, state.goals), [state.accounts, views, state.goals]);
+  const safe = useMemo(() => safeToSpend(everydayLeft(views), today.day, today.monthDays, today.weekday), [views, today]);
+  const unsorted = useMemo(() => state.txns.filter((t) => t.envelopeId === null), [state.txns]);
+
+  const store: Store = {
+    ...state, ready, today, month, views, rta, safe, unsorted, toast,
+    dismissToast: () => setToast(null),
+    setHideAmounts: (v) => setState((s) => ({ ...s, hideAmounts: v })),
+    setEnvView: (v) => setState((s) => ({ ...s, envView: v })),
+    markChecklist: (k) => setState((s) => (s.checklist[k] ? s : { ...s, checklist: { ...s.checklist, [k]: true } })),
+    assign: (budgets) => change('Assigned', (s) => ({
+      ...s, envelopes: s.envelopes.map((e) => (e.id in budgets ? { ...e, budget: budgets[e.id] } : e)),
+    })),
+    cover: (targetId, sources) => change('Covered', (s) => {
+      const v = viewEnvelopes(s.envelopes, s.txns, month);
+      const need = Math.max(0, -(v.find((e) => e.id === targetId)?.left ?? 0));
+      const has = (src: CoverSource) => src.kind === 'rta'
+        ? Math.max(0, readyToAssign(s.accounts, v, s.goals))
+        : Math.max(0, v.find((e) => e.id === src.envelopeId)?.left ?? 0);
+      const clean = normalizeCover(sources, need, has);
+      return { ...s, envelopes: applyCover(s.envelopes, targetId, clean), checklist: { ...s.checklist, cover: true } };
+    }),
+    addEnvelope: (e) => change(`${e.name} added`, (s) => ({
+      ...s, envelopes: [...s.envelopes, { ...e, id: `env-${Date.now()}`, budget: e.budget ?? 0, color: ['#D9774A', '#2E9E72', '#4A8CC9', '#B8901A', '#7A6BD6', '#5F8A99', '#A0699B'][s.envelopes.length % 7] }],
+    })),
+    addTxn: (t) => change('Transaction added', (s) => ({
+      ...s,
+      txns: autoFile([...s.txns, { ...t, id: `txn-${Date.now()}`, source: 'manual' }], s.rules),
+      accounts: s.accounts.map((a) => (a.id === t.accountId ? { ...a, balance: a.balance + (t.type === 'spend' ? -t.amount : t.amount) } : a)),
+    })),
+    fileTxn: (txnId, envelopeId, rule) => change('Filed', (s) => {
+      const txn = s.txns.find((t) => t.id === txnId);
+      const rules = rule && txn && !s.rules.some((r) => r.merchant === txn.merchant) ? [...s.rules, { merchant: txn.merchant, envelopeId }] : s.rules;
+      return { ...s, txns: refile(s.txns, txnId, envelopeId), rules, checklist: { ...s.checklist, sort: true } };
+    }),
+    addGoalMoney: (goalId, amount) => change('Added to goal', (s) => ({
+      ...s, goals: s.goals.map((g) => (g.id === goalId ? { ...g, saved: g.saved + amount, addedThisMonth: g.addedThisMonth + amount } : g)),
+    })),
+    removeGoal: (goalId) => change('Goal deleted, money returned to Ready to Assign', (s) => ({ ...s, goals: deleteGoal(s.goals, goalId) })),
+    addGoal: (g) => change(`${g.name} added`, (s) => ({ ...s, goals: [...s.goals, { ...g, id: `goal-${Date.now()}`, saved: 0, addedThisMonth: 0 }] })),
+    fixBalance: (accountId, balance) => change('Balance updated', (s) => ({ ...s, accounts: s.accounts.map((a) => (a.id === accountId ? { ...a, balance, syncOk: true } : a)) })),
+    addAccount: (a) => change(`${a.name} added`, (s) => ({ ...s, accounts: [...s.accounts, { ...a, id: `acc-${Date.now()}`, syncOk: true }] })),
+    setHomeLayout: (order, hidden) => setState((s) => ({ ...s, homeOrder: order, homeHidden: hidden })),
+  };
+
+  return <Ctx.Provider value={store}>{children}</Ctx.Provider>;
+}
