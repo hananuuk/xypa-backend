@@ -34,6 +34,12 @@ function Shell() {
   const [stack, setStack] = useState<Route[]>([]);
   const [sheet, setSheet] = useState<Sheet | null>(null);
 
+  // Logging out / replaying setup must not leave old routes behind (was: stuck on Settings after login).
+  const inOnboarding = st.onboarded === false;
+  React.useEffect(() => {
+    if (inOnboarding) { setStack([]); setSheet(null); setTab('plan'); }
+  }, [inOnboarding]);
+
   const back = useCallback(() => setStack((s) => s.slice(0, -1)), []);
   const nav: Nav = useMemo(() => ({
     push: (r) => setStack((s) => [...s, r]),
