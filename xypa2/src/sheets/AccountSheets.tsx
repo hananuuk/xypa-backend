@@ -6,6 +6,7 @@ import { Button, InnerCard } from '../design/Primitives';
 import { colors, font } from '../design/tokens';
 import { formatMoney, parseMoney } from '../logic/money';
 import { spentByDay } from '../logic/budget';
+import { BANKS } from '../data/banks';
 import { useStore } from '../store/store';
 
 /** Fix sync: why a bank might have stopped syncing, and a way to update the balance by hand. */
@@ -37,7 +38,9 @@ export function AddAccountSheet({ onClose }: { onClose: () => void }) {
   const [balance, setBalance] = useState('');
   return (
     <BottomSheet visible title="Add account" onClose={onClose}>
-      <Field label="Name" value={name} onChangeText={setName} placeholder="e.g. Khan Bank" autoFocus />
+      <Text style={s.eyebrow}>Bank</Text>
+      <View style={s.wrap}>{BANKS.map((b) => <Chip key={b.id} label={b.name} selected={name === b.name} onPress={() => setName(b.name)} />)}</View>
+      <Field label="Name" value={name} onChangeText={setName} placeholder="Pick a bank or type a name" />
       <Text style={s.eyebrow}>Type</Text>
       <View style={s.wrap}>{(['Checking', 'Savings', 'Credit', 'Loan', 'Wallet'] as const).map((k) => <Chip key={k} label={k} selected={kind === k} onPress={() => setKind(k)} />)}</View>
       <Field label="Balance" value={balance ? parseMoney(balance).toLocaleString('en-US') : ''} onChangeText={setBalance} keyboardType="number-pad" placeholder="0₮" />

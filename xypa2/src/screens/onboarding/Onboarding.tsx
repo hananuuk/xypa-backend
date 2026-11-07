@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { BankAvatar } from '../../design/BankAvatar';
+import { BANKS, bankFor } from '../../data/banks';
 import { authenticate, me } from '../../api/client';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -132,8 +134,14 @@ function Accounts({ n, draft, set, onBack, onNext }: P) {
       footer={<BigButton title="Looks right" disabled={total <= 0} onPress={onNext} />}>
       <Row title="Cash" note="In your wallet"><AmountInput label="Cash" value={draft.cash} onChange={(v) => set({ cash: v })} /></Row>
       {draft.accounts.map((a) => (
-        <Row key={a.id} title={a.name} note={a.note ?? 'Added by hand'}><AmountInput label={`${a.name} balance`} value={a.balance} onChange={(v) => set({ accounts: draft.accounts.map((x) => (x.id === a.id ? { ...x, balance: v } : x)) })} /></Row>
+        <Row key={a.id} icon={<BankAvatar name={a.name} size={36} />} title={a.name} note={a.note ?? 'Added by hand'}><AmountInput label={`${a.name} balance`} value={a.balance} onChange={(v) => set({ accounts: draft.accounts.map((x) => (x.id === a.id ? { ...x, balance: v } : x)) })} /></Row>
       ))}
+      <Text style={s.rowN}>Add a bank</Text>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+        {BANKS.filter((b) => !draft.accounts.some((a) => bankFor(a.name)?.id === b.id)).map((b) => (
+          <Pressable key={b.id} accessibilityRole="button" accessibilityLabel={`Add ${b.name}`} onPress={() => set({ accounts: [...draft.accounts, { id: uid(), name: b.name, kind: 'Checking', balance: 0 }] })} style={s.addBtn}><Text style={s.addText}>{b.name}</Text></Pressable>
+        ))}
+      </View>
       <View style={s.addRow}>
         <TextInput accessibilityLabel="Account name" placeholder="Account name" placeholderTextColor={colors.muted} value={name} onChangeText={setName} onSubmitEditing={add} style={s.nameInput} />
         <Pressable accessibilityRole="button" accessibilityLabel="Add account" onPress={add} style={s.addBtn}><Text style={s.addText}>Add</Text></Pressable>
@@ -144,8 +152,8 @@ function Accounts({ n, draft, set, onBack, onNext }: P) {
   );
 }
 type P = { n: number; draft: Draft; set: (p: Partial<Draft>) => void; onBack: () => void; onNext: () => void };
-const Row = ({ title, note, children }: { title: string; note?: string; children: React.ReactNode }) => (
-  <View style={s.row}><View style={{ flex: 1 }}><Text style={s.rowT}>{title}</Text>{note ? <Text style={s.rowN}>{note}</Text> : null}</View>{children}</View>
+const Row = ({ title, note, icon, children }: { title: string; note?: string; icon?: React.ReactNode; children: React.ReactNode }) => (
+  <View style={s.row}>{icon ? <View style={{ marginRight: 10 }}>{icon}</View> : null}<View style={{ flex: 1 }}><Text style={s.rowT}>{title}</Text>{note ? <Text style={s.rowN}>{note}</Text> : null}</View>{children}</View>
 );
 
 /* ---------- Step 3 ---------- */

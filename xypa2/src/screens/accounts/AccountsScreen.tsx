@@ -7,11 +7,11 @@ import { ScreenFrame } from '../../design/ScreenFrame';
 import { Block, Button, IconButton, InnerCard, PillBar, SectionLabel } from '../../design/Primitives';
 import { colors, font } from '../../design/tokens';
 import { formatMoney } from '../../logic/money';
+import { BankAvatar } from '../../design/BankAvatar';
 import { TxnsByDay } from '../../design/TxnRows';
 import { useStore } from '../../store/store';
 import { useNav } from '../../nav';
 
-const initials = (n: string) => n.split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase();
 
 export function AccountsScreen() {
   const st = useStore();
@@ -35,7 +35,7 @@ export function AccountsScreen() {
         {st.accounts.map((a) => (
           <Pressable key={a.id} accessibilityRole="button" accessibilityLabel={`${a.name}, ${formatMoney(a.balance, { hidden })}${a.syncOk ? '' : ', not syncing, tap to fix'}`} onPress={() => nav.push({ name: 'account', id: a.id })}>
             <InnerCard style={s.acc}>
-              <View style={s.avatar}><Text style={s.avatarText}>{initials(a.name)}</Text></View>
+              <BankAvatar name={a.name} />
               <View style={{ flex: 1 }}>
                 <Text style={s.name}>{a.name}</Text>
                 {a.kind === 'Wallet' ? <Text style={s.label}>Cash</Text> : a.syncOk ? <Text style={s.label}>Synced {a.lastSync?.toLowerCase()}</Text>
