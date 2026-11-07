@@ -11,6 +11,7 @@ import { formatMoney } from '../../logic/money';
 import { monthName } from '../../store/calendar';
 import { useStore } from '../../store/store';
 import { useNav } from '../../nav';
+import { Button } from '../../design/Primitives';
 
 type Tab = 'breakdown' | 'calendar' | 'report';
 
@@ -27,6 +28,7 @@ export function ReflectScreen() {
   const canPrev = month > earliest;
   const canNext = month < st.today.month;
   const label = `${monthName(month)}${yearOf(month) !== yearOf(st.today.month) ? ' ' + yearOf(month) : ''}`;
+  const nav = useNav();
   const picker = (
     <View style={s.picker}>
       <Pressable accessibilityRole="button" accessibilityLabel="Previous month" disabled={!canPrev} hitSlop={10} onPress={() => setMonth(shift(month, -1))} style={[s.arrow, !canPrev && { opacity: 0.25 }]}><Icon name="chevronLeft" size={18} color={colors.ink} /></Pressable>
@@ -38,6 +40,7 @@ export function ReflectScreen() {
     <ScrollView style={s.fill} contentContainerStyle={[s.content, { paddingTop: insets.top + 8, paddingBottom: 130 }]} showsVerticalScrollIndicator={false}>
       <PillBar left={<Text style={s.title} accessibilityRole="header">Reflect</Text>} right={picker} />
       <Block><Segmented value={tab} onChange={setTab} options={[{ value: 'breakdown', label: 'Breakdown' }, { value: 'calendar', label: 'Calendar' }, { value: 'report', label: 'Report' }]} /></Block>
+      {st.pro !== false ? <Block><Button title="Ask xypa" variant="chip" onPress={() => nav.push({ name: 'ask' })} accessibilityLabel="Ask xypa about your spending" /></Block> : null}
       {tab === 'breakdown' ? <Breakdown month={month} /> : tab === 'calendar' ? <CalendarView month={month} /> : <Report month={month} />}
     </ScrollView>
   );
@@ -45,6 +48,7 @@ export function ReflectScreen() {
 
 function Breakdown({ month }: { month: string }) {
   const st = useStore();
+  const nav = useNav();
   const rows = viewEnvelopes(st.envelopes, st.txns, month).filter((e) => e.spent > 0).sort((a, b) => b.spent - a.spent);
   const total = rows.reduce((a, e) => a + e.spent, 0);
   const max = rows[0]?.spent ?? 1;
@@ -57,20 +61,20 @@ function Breakdown({ month }: { month: string }) {
       <Money value={total} style={s.hero} />
       <View style={{ gap: 14, marginTop: 14 }}>
         {rows.length === 0 ? <Text style={s.label}>Nothing spent.</Text> : rows.map((e) => (
-          <View key={e.id} accessible accessibilityLabel={`${e.name}, ${formatMoney(e.spent)}`}>
+          <Pressable key={e.id} accessibilityRole="button" accessibilityLabel={`${e.name}, ${formatMoney(e.spent)}. See transactions`} onPress={() => nav.push({ name: 'txnList', title: e.name, month, envelopeId: e.id })}>
             <View style={s.row}><View style={s.nameRow}><View style={[s.dot, { backgroundColor: e.color }]} /><Text style={s.name}>{e.name}</Text></View><Money value={e.spent} style={s.amt} /></View>
             <View style={s.track}><View style={[s.bar, { width: `${(e.spent / max) * 100}%`, backgroundColor: e.color }]} /></View>
-          </View>
+          </Pressable>
         ))}
       </View>
       {merchants.length ? (
         <View style={{ marginTop: 22, gap: 12 }}>
           <Text style={s.label}>Top merchants</Text>
           {merchants.map((m, i) => (
-            <View key={m.name} style={s.row} accessible accessibilityLabel={`${i + 1}. ${m.name}, ${formatMoney(m.total)}, ${m.count} ${m.count === 1 ? 'time' : 'times'}`}>
+            <Pressable key={m.name} style={s.row} accessibilityRole="button" onPress={() => nav.push({ name: 'txnList', title: m.name, month, merchant: m.name })} accessibilityLabel={`${i + 1}. ${m.name}, ${formatMoney(m.total)}, ${m.count} ${m.count === 1 ? 'time' : 'times'}. See transactions`}>
               <View style={{ flex: 1 }}><Text style={s.name} numberOfLines={1}>{i + 1}. {m.name}</Text><Text style={s.label}>{m.count} {m.count === 1 ? 'purchase' : 'purchases'}</Text></View>
               <Money value={m.total} style={s.amt} />
-            </View>
+            </Pressable>
           ))}
         </View>
       ) : null}

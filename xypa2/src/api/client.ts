@@ -69,3 +69,8 @@ export async function scanGmail(onProgress: (p: ScanProgress) => void): Promise<
 }
 
 export const pdfToText = (pdfBase64: string) => call<{ text: string }>('/v2/statement/pdf', { method: 'POST', body: JSON.stringify({ pdf: pdfBase64 }) });
+
+export type AskTurn = { role: 'user' | 'assistant'; text: string };
+/** Ask xypa: the question, a few earlier turns, and a plain-text snapshot of the person's own numbers. */
+export const askXypa = (question: string, history: AskTurn[], context: string) =>
+  call<{ answer: string }>('/v2/ask', { method: 'POST', body: JSON.stringify({ question, history: history.slice(-6), context }) });

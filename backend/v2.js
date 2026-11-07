@@ -150,6 +150,12 @@ function mount(app, { pool }) {
     res.json({ ok: true });
   }));
 
+  app.post('/v2/ask', authed(async (req, res) => {
+    const r = await require('./ask').answer(req.body, { key: process.env.ANTHROPIC_API_KEY });
+    if (r.status !== 200) return res.status(r.status).json({ error: r.error });
+    res.json({ answer: r.answer });
+  }));
+
   // PDF statements: the phone sends the file, we hand back plain text lines; the app does the reading.
   app.post('/v2/statement/pdf', authed(async (req, res) => {
     const b = (req.body || {}).pdf;

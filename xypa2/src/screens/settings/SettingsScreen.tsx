@@ -76,6 +76,11 @@ export function SettingsScreen() {
         <Text style={s.hint}>Your choices are saved. Alerts themselves start working once notifications are switched on.</Text>
       </Block>
       <Block padding={false} style={s.block}>
+        <Title t="XYPA ASSISTANT (PRO)" />
+        <Toggle label="Ask xypa (Pro preview)" value={st.pro !== false} onChange={st.setPro} />
+        <Text style={s.hint}>Pro is switched on for you while it's being tested. Ask xypa only reads your numbers. It never moves money.</Text>
+      </Block>
+      <Block padding={false} style={s.block}>
         <Title t="SETUP" />
         <Row label="Replay first-run setup" onPress={st.startOnboarding} />
         <Row label="Preview a new month" onPress={() => nav.push({ name: 'newMonth' })} />

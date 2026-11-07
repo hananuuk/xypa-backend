@@ -23,6 +23,8 @@ export type Persisted = {
   currency?: CurrencyCode;
   language?: 'en' | 'mn';
   notify?: { overspend: boolean; newTxns: boolean; morning: boolean };
+  /** Preview switch for the Pro assistant. Missing counts as on while Pro is in preview. */
+  pro?: boolean;
 };
 
 const defaults = (): Persisted => ({
@@ -63,6 +65,7 @@ type Store = Persisted & {
   setSession: (me: { email: string; name: string | null; gmailConnected: boolean }) => void;
   setCurrencyCode: (c: CurrencyCode) => void;
   setLanguage: (l: 'en' | 'mn') => void;
+  setPro: (v: boolean) => void;
   setNotify: (k: 'overspend' | 'newTxns' | 'morning', v: boolean) => void;
   logOut: () => void;
   completeOnboarding: (plan: { accounts: Account[]; envelopes: Envelope[]; txns?: Txn[] }) => void;
@@ -151,6 +154,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setSession: (me) => setState((s) => ({ ...s, profile: { name: s.profile?.name || me.name || '', email: me.email, gmail: me.gmailConnected } })),
     setCurrencyCode: (c) => setState((s) => ({ ...s, currency: c })),
     setLanguage: (l) => setState((s) => ({ ...s, language: l })),
+    setPro: (v) => setState((s) => ({ ...s, pro: v })),
     setNotify: (k, v) => setState((s) => ({ ...s, notify: { overspend: true, newTxns: true, morning: false, ...s.notify, [k]: v } })),
     logOut: () => { setToast(null); setState({ ...defaults(), onboarded: false, profile: undefined }); },
     startOnboarding: () => setState((s) => ({ ...s, onboarded: false })),

@@ -25,6 +25,8 @@ import { CoverSheet } from './src/sheets/CoverSheet';
 import { AddGoalMoneySheet, ConfirmDeleteGoalSheet, NewGoalSheet } from './src/sheets/GoalSheets';
 import { MonthPickerSheet, MoveInSheet, NewEnvelopeSheet, SafeExplainSheet } from './src/sheets/SmallSheets';
 import { ConfirmLogOutSheet, CurrencySheet, EditNameSheet, GmailSheet, LanguageSheet } from './src/sheets/SettingsSheets';
+import { TxnListScreen } from './src/screens/reflect/TxnListScreen';
+import { AskScreen } from './src/screens/ask/AskScreen';
 import { StoreProvider, useStore } from './src/store/store';
 
 function Shell() {
@@ -70,6 +72,8 @@ function Shell() {
       case 'editHome': return <EditHomeScreen />;
       case 'newMonth': return <NewMonthScreen />;
       case 'settings': return <SettingsScreen />;
+      case 'txnList': return <TxnListScreen title={r.title} month={r.month} envelopeId={r.envelopeId} merchant={r.merchant} />;
+      case 'ask': return <AskScreen />;
     }
   };
 
