@@ -8,7 +8,7 @@ import { font } from '../../design/tokens';
 import { BigButton, ob, Poster } from './ui';
 
 const BLUE = '#2F5BE0';
-const UNITS = [{ label: 'million', mult: 1_000_000, max: 99 }, { label: 'hundred thousand', mult: 100_000, max: 99 }, { label: 'thousand', mult: 1_000, max: 999 }];
+const UNITS = [{ label: 'million', mult: 1_000_000, max: 100 }, { label: 'hundred thousand', mult: 100_000, max: 9 }, { label: 'thousand', mult: 1_000, max: 99 }];
 const range = (n: number) => Array.from({ length: n }, (_, i) => String(i + 1));
 
 /** "Let's work out your money flow first." with a sentence the person completes by scrolling. */
@@ -26,8 +26,8 @@ export function SpendFlowStep({ onBack, onNext }: { onBack: () => void; onNext: 
       <View style={s.mid}>
         <Text style={s.line}>I spend about</Text>
         <View style={s.pickers}>
-          <Wheel key={`n${unit}`} label={tr('Amount')} items={numbers} index={n - 1} onIndex={(i) => setNum(i + 1)} width={110} />
-          <Wheel label={tr('Unit')} items={unitNames} index={unit} onIndex={(i) => { setUnit(i); setNum((v) => Math.min(v, UNITS[i].max)); }} width={190} fontSize={26} itemHeight={58} />
+          <Wheel label={tr('Amount')} items={numbers} index={n - 1} onIndex={(i) => setNum(i + 1)} width={64} />
+          <Wheel label={tr('Unit')} items={unitNames} index={unit} onIndex={(i) => { setUnit(i); setNum((v) => Math.min(v, UNITS[i].max)); }} width={140} />
         </View>
         <Text style={s.line}>tögrög a month.</Text>
       </View>
@@ -41,5 +41,5 @@ const s = StyleSheet.create({
   title: { fontFamily: font.medium, fontSize: 32, lineHeight: 38, letterSpacing: -1, color: ob.ink, marginTop: 8 },
   mid: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   line: { fontFamily: font.medium, fontSize: 22, lineHeight: 30, color: ob.ink, textAlign: 'center' },
-  pickers: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginVertical: 6 },
+  pickers: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, marginVertical: 4 },
 });
