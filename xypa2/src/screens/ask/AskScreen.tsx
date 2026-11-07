@@ -1,5 +1,7 @@
 import React, { useRef, useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { tr } from '../../i18n';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Text } from '../../design/Text';
 import { askXypa, AskTurn, getToken } from '../../api/client';
 import { Icon } from '../../design/Icon';
 import { ScreenFrame } from '../../design/ScreenFrame';
@@ -43,8 +45,8 @@ export function AskScreen() {
 
   const input = (
     <View style={s.inputRow}>
-      <TextInput accessibilityLabel="Ask xypa" value={text} onChangeText={setText} placeholder="Ask about your money" placeholderTextColor={colors.muted} style={s.input} multiline maxLength={500} returnKeyType="send" blurOnSubmit onSubmitEditing={() => send(text)} />
-      <Pressable accessibilityRole="button" accessibilityLabel="Send" disabled={busy || !text.trim()} onPress={() => send(text)} style={[s.send, (busy || !text.trim()) && { opacity: 0.3 }]}><Icon name="chevronRight" size={20} color={colors.white} /></Pressable>
+      <TextInput accessibilityLabel={tr('Ask xypa')} value={text} onChangeText={setText} placeholder={tr('Ask about your money')} placeholderTextColor={colors.muted} style={s.input} multiline maxLength={500} returnKeyType="send" blurOnSubmit onSubmitEditing={() => send(text)} />
+      <Pressable accessibilityRole="button" accessibilityLabel={tr('Send')} disabled={busy || !text.trim()} onPress={() => send(text)} style={[s.send, (busy || !text.trim()) && { opacity: 0.3 }]}><Icon name="chevronRight" size={20} color={colors.white} /></Pressable>
     </View>
   );
 
@@ -58,7 +60,7 @@ export function AskScreen() {
               {CHIPS.map((c) => <Pressable key={c} accessibilityRole="button" style={s.chip} onPress={() => send(c)}><Text style={s.chipText}>{c}</Text></Pressable>)}
             </View>
           ) : turns.map((t, i) => (
-            <View key={i} style={[s.bubble, t.role === 'user' ? s.me : s.bot]} accessible accessibilityLabel={`${t.role === 'user' ? 'You' : 'xypa'}: ${t.text}`}>
+            <View key={i} style={[s.bubble, t.role === 'user' ? s.me : s.bot]} accessible accessibilityLabel={`${t.role === 'user' ? tr('You') : 'xypa'}: ${t.text}`}>
               <Text style={[s.msg, t.role === 'user' && { color: colors.white }]}>{t.text}</Text>
             </View>
           ))}

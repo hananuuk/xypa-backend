@@ -1,12 +1,14 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, TextInput, TextInputProps, View } from 'react-native';
+import { tr } from '../i18n';
+import { Pressable, StyleSheet, TextInput, TextInputProps, View } from 'react-native';
+import { Text } from './Text';
 import { colors, font } from './tokens';
 
 export function Field({ label, ...props }: { label: string } & TextInputProps) {
   return (
     <View style={s.field}>
       <Text style={s.label}>{label}</Text>
-      <TextInput accessibilityLabel={label} placeholderTextColor={colors.muted} {...props} style={[s.input, props.style]} />
+      <TextInput accessibilityLabel={tr(label)} placeholderTextColor={colors.muted} {...props} style={[s.input, props.style]} />
     </View>
   );
 }
@@ -14,7 +16,7 @@ export function Field({ label, ...props }: { label: string } & TextInputProps) {
 /** Selectable pill: used for envelope, account and group pickers. */
 export function Chip({ label, selected, onPress, color, accent }: { label: string; selected?: boolean; onPress: () => void; color?: string; accent?: boolean }) {
   return (
-    <Pressable accessibilityRole="radio" accessibilityState={{ selected: !!selected }} accessibilityLabel={label} onPress={onPress}
+    <Pressable accessibilityRole="radio" accessibilityState={{ selected: !!selected }} accessibilityLabel={tr(label)} onPress={onPress}
       style={[s.chip, selected && (accent ? s.chipAccent : s.chipOn)]}>
       {color ? <View style={[s.dot, { backgroundColor: color }]} /> : null}
       <Text style={[s.chipText, selected && { color: colors.white }]}>{label}</Text>

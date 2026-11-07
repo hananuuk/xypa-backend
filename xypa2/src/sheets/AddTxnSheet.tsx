@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { tr } from '../i18n';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '../design/Text';
 import { BottomSheet } from '../design/BottomSheet';
 import { Chip, Field, Segmented } from '../design/Fields';
 import { Button } from '../design/Primitives';
@@ -20,8 +22,8 @@ export function AddTxnSheet({ envelopeId, onClose }: { envelopeId?: string; onCl
   return (
     <BottomSheet visible title="Add transaction" onClose={onClose}>
       <Segmented value={type} onChange={setType} options={[{ value: 'spend', label: 'Spent' }, { value: 'income', label: 'Received' }]} />
-      <Field label="Amount" value={amount ? value.toLocaleString('en-US') : ''} onChangeText={setAmount} keyboardType="number-pad" placeholder="0₮" autoFocus />
-      <Field label="What for" value={what} onChangeText={setWhat} placeholder="Merchant or note" />
+      <Field label="Amount" value={amount ? value.toLocaleString('en-US') : ''} onChangeText={setAmount} keyboardType="number-pad" placeholder={tr('0₮')} autoFocus />
+      <Field label="What for" value={what} onChangeText={setWhat} placeholder={tr('Merchant or note')} />
       {type === 'spend' ? (
         <>
           <Text style={s.label}>Envelope</Text>

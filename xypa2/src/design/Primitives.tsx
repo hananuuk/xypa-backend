@@ -1,5 +1,7 @@
 import React from 'react';
-import { Pressable, StyleProp, StyleSheet, Text, TextStyle, View, ViewStyle } from 'react-native';
+import { tr } from '../i18n';
+import { Pressable, StyleProp, StyleSheet, TextStyle, View, ViewStyle } from 'react-native';
+import { Text } from './Text';
 import { colors, font, MIN_TARGET, radius, space } from './tokens';
 
 /** White rounded block (spec §2.3). */
@@ -25,7 +27,7 @@ export function PillBar({ left, right }: { left: React.ReactNode; right?: React.
 /** Round icon button inside a white block: visual 40px, hit area at least 44px. */
 export function IconButton({ children, label, onPress, style }: { children: React.ReactNode; label: string; onPress: () => void; style?: StyleProp<ViewStyle> }) {
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} hitSlop={6} style={({ pressed }) => [s.iconBtn, pressed && s.pressed, style]}>
+    <Pressable accessibilityRole="button" accessibilityLabel={tr(label)} onPress={onPress} hitSlop={6} style={({ pressed }) => [s.iconBtn, pressed && s.pressed, style]}>
       {children}
     </Pressable>
   );

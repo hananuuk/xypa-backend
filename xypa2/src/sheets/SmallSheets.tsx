@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { tr } from '../i18n';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '../design/Text';
 import { BottomSheet } from '../design/BottomSheet';
 import { Chip, Field } from '../design/Fields';
 import { Button, InnerCard } from '../design/Primitives';
@@ -21,8 +23,8 @@ export function SafeExplainSheet({ onClose }: { onClose: () => void }) {
       <InnerCard style={{ gap: 12 }}>
         <Line a="Left in everyday envelopes" b={formatMoney(everyday)} />
         <Line a="Days to go this month" b={String(daysLeft)} />
-        <Line a={`${formatMoney(everyday)} ÷ ${daysLeft}, rounded down`} b={formatMoney(st.safe.today)} strong />
-        <Line a={`Today × ${weekDays} days left this week`} b={formatMoney(st.safe.week)} />
+        <Line a={tr('{0} ÷ {1}, rounded down', formatMoney(everyday), daysLeft)} b={formatMoney(st.safe.today)} strong />
+        <Line a={tr('Today × {0} days left this week', weekDays)} b={formatMoney(st.safe.week)} />
         <Line a="Rest of the month" b={formatMoney(st.safe.month)} />
       </InnerCard>
       <Text style={s.note}>Overspent envelopes count as 0. Bills and goals are never included, so this is only money you can spend freely.</Text>
@@ -59,7 +61,7 @@ export function MonthPickerSheet({ onClose }: { onClose: () => void }) {
           const isNext = m === cur + 1;
           return (
             <View key={n} style={s.cellWrap}>
-              <Pressable accessibilityRole="button" accessibilityState={{ selected, disabled }} accessibilityLabel={`${MONTH_NAMES[i]}${isNext ? ', preview the new month' : ''}`}
+              <Pressable accessibilityRole="button" accessibilityState={{ selected, disabled }} accessibilityLabel={isNext ? tr('{0}, preview the new month', monthName(`2000-${String(i + 1).padStart(2, '0')}`)) : monthName(`2000-${String(i + 1).padStart(2, '0')}`)}
                 disabled={disabled || selected}
                 onPress={() => { onClose(); if (isNext) nav.push({ name: 'newMonth' }); }}
                 style={[s.cell, selected && s.cellOn, isNext && s.cellNext, !disabled && !selected && !isNext && s.cellOpen]}>
@@ -69,7 +71,7 @@ export function MonthPickerSheet({ onClose }: { onClose: () => void }) {
           );
         })}
       </View>
-      <Text style={s.note}>Months before you started are greyed out. {MONTH_NAMES[cur % 12]} opens a preview of the new-month moment.</Text>
+      <Text style={s.note}>{tr('Months before you started are greyed out. {0} opens a preview of the new-month moment.', tr(MONTH_NAMES[cur % 12]))}</Text>
     </BottomSheet>
   );
 }
@@ -81,12 +83,12 @@ export function NewEnvelopeSheet({ onClose }: { onClose: () => void }) {
   const [target, setTarget] = useState('');
   return (
     <BottomSheet visible title="New envelope" onClose={onClose}>
-      <Field label="Name" value={name} onChangeText={setName} placeholder="e.g. Gym" autoFocus />
+      <Field label="Name" value={name} onChangeText={setName} placeholder={tr('e.g. Gym')} autoFocus />
       <Text style={s.eyebrow}>Group</Text>
       <View style={s.wrap}>
         {(['Everyday', 'Bills'] as const).map((g) => <Chip key={g} label={g} selected={group === g} onPress={() => setGroup(g)} />)}
       </View>
-      <Field label="Monthly target (optional)" value={target ? parseMoney(target).toLocaleString('en-US') : ''} onChangeText={setTarget} keyboardType="number-pad" placeholder="0₮" />
+      <Field label="Monthly target (optional)" value={target ? parseMoney(target).toLocaleString('en-US') : ''} onChangeText={setTarget} keyboardType="number-pad" placeholder={tr('0₮')} />
       <Button full title="Create envelope" disabled={!name.trim()} style={{ marginTop: 18 }}
         onPress={() => { st.addEnvelope({ name: name.trim(), group, target: parseMoney(target) }); onClose(); }} />
     </BottomSheet>
@@ -101,10 +103,10 @@ export function MoveInSheet({ id, onClose }: { id: string; onClose: () => void }
   const value = Math.min(parseMoney(amount), Math.max(0, st.rta));
   if (!e) return null;
   return (
-    <BottomSheet visible title={`Move money into ${e.name}`} onClose={onClose}>
-      <Text style={s.note}>Ready to Assign has {formatMoney(Math.max(0, st.rta))}.</Text>
-      <Field label="Amount" value={amount ? parseMoney(amount).toLocaleString('en-US') : ''} onChangeText={setAmount} keyboardType="number-pad" placeholder="0₮" autoFocus />
-      <Button full title={`Move ${formatMoney(value)}`} disabled={value === 0} style={{ marginTop: 18 }}
+    <BottomSheet visible title={tr('Move money into {0}', e.name)} onClose={onClose}>
+      <Text style={s.note}>{tr('Ready to Assign has {0}.', formatMoney(Math.max(0, st.rta)))}</Text>
+      <Field label="Amount" value={amount ? parseMoney(amount).toLocaleString('en-US') : ''} onChangeText={setAmount} keyboardType="number-pad" placeholder={tr('0₮')} autoFocus />
+      <Button full title={tr('Move {0}', formatMoney(value))} disabled={value === 0} style={{ marginTop: 18 }}
         onPress={() => { st.assign({ [id]: e.budget + value }); onClose(); }} />
     </BottomSheet>
   );

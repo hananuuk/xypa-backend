@@ -1,5 +1,7 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { tr } from '../../i18n';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '../../design/Text';
 import { Button } from '../../design/Primitives';
 import { Gauge } from '../../design/Gauge';
 import { Icon } from '../../design/Icon';
@@ -45,7 +47,7 @@ export function EnvelopeCard({ e, onPress, onCover, grid }: { e: EnvelopeView; o
             : <Text style={[s.sub, { fontFamily: font.medium, color: colors.ink2 }]}>{t.plan.needs(amt(needs(e.target, e.budget)))}</Text>}
         </View>
       ) : (
-        <Text style={s.assigned} accessibilityLabel={`of ${amt(e.budget)} assigned`}>{'/ '}<Money value={e.budget} style={s.assigned} /></Text>
+        <Text style={s.assigned} accessibilityLabel={tr('of {0} assigned', amt(e.budget))}>{'/ '}<Money value={e.budget} style={s.assigned} /></Text>
       )}
       {!isBill && overspent && grid ? <Button title={t.plan.cover} variant="outline" small onPress={onCover} style={{ alignSelf: 'flex-start', marginTop: 6 }} /> : null}
       {!isBill ? <Gauge fraction={fraction} overspent={overspent} /> : null}

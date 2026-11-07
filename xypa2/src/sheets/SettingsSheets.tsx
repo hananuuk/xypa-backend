@@ -1,5 +1,8 @@
+import { deviceLang } from '../i18n';
 import React, { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { tr } from '../i18n';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '../design/Text';
 import { BottomSheet } from '../design/BottomSheet';
 import { Icon } from '../design/Icon';
 import { Field } from '../design/Fields';
@@ -40,8 +43,8 @@ export function LanguageSheet({ onClose }: { onClose: () => void }) {
   return (
     <BottomSheet visible title="Language" onClose={onClose}>
       <View style={{ gap: 6 }}>
-        <Option label="English" selected={st.language !== 'mn'} onPress={() => { st.setLanguage('en'); onClose(); }} />
-        <Option label="Монгол" note="Coming soon" selected={false} disabled onPress={() => {}} />
+        <Option label="English" selected={(st.language ?? deviceLang()) !== 'mn'} onPress={() => { st.setLanguage('en'); onClose(); }} />
+        <Option label="Монгол" selected={(st.language ?? deviceLang()) === 'mn'} onPress={() => { st.setLanguage('mn'); onClose(); }} />
       </View>
     </BottomSheet>
   );
@@ -52,7 +55,7 @@ export function EditNameSheet({ onClose }: { onClose: () => void }) {
   const [name, setName] = useState(st.profile?.name ?? '');
   return (
     <BottomSheet visible title="Your name" onClose={onClose}>
-      <Field label="Name" value={name} onChangeText={setName} placeholder="What should we call you?" autoFocus />
+      <Field label="Name" value={name} onChangeText={setName} placeholder={tr('What should we call you?')} autoFocus />
       <Button full title="Save" style={{ marginTop: 18 }} onPress={() => { st.setProfileName(name.trim()); onClose(); }} />
     </BottomSheet>
   );

@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text } from 'react-native';
+import { tr } from '../../i18n';
+import { StyleSheet } from 'react-native';
+import { Text } from '../../design/Text';
 import { Block, Button } from '../../design/Primitives';
 import { ScreenFrame } from '../../design/ScreenFrame';
 import { colors, font } from '../../design/tokens';
@@ -15,10 +17,10 @@ export function ImportStatementScreen() {
   const [done, setDone] = useState<ImportResult | null>(null);
   if (!done) return <StatementStep plain onBack={nav.back} onRead={(found) => setDone(st.importStatement(found))} />;
   const lines = [
-    `${done.added} new ${done.added === 1 ? 'transaction' : 'transactions'} added`,
-    done.duplicates ? `${done.duplicates} already in xypa, skipped` : null,
-    done.newAccounts.length ? `New ${done.newAccounts.length === 1 ? 'account' : 'accounts'}: ${done.newAccounts.join(', ')}` : null,
-    done.unsorted ? `${done.unsorted} need sorting into an envelope` : null,
+    tr('{0} new transactions added', done.added),
+    done.duplicates ? tr('{0} already in xypa, skipped', done.duplicates) : null,
+    done.newAccounts.length ? tr('New accounts: {0}', done.newAccounts.join(', ')) : null,
+    done.unsorted ? tr('{0} need sorting into an envelope', done.unsorted) : null,
   ].filter(Boolean) as string[];
   return (
     <ScreenFrame title="Statement added" onBack={nav.back}>

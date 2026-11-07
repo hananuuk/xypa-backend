@@ -1,5 +1,7 @@
 import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { tr } from '../../i18n';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '../../design/Text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Money } from '../../design/Amounts';
 import { Icon } from '../../design/Icon';
@@ -8,11 +10,11 @@ import { Block, Button, IconButton, InnerCard, PillBar } from '../../design/Prim
 import { colors, font } from '../../design/tokens';
 import { behindBy, goalReached } from '../../logic/budget';
 import { formatMoney } from '../../logic/money';
-import { MONTH_NAMES, monthName } from '../../store/calendar';
+import { MONTH_NAMES, monthName, monthShort } from '../../store/calendar';
 import { useStore } from '../../store/store';
 import { useNav } from '../../nav';
 
-const byLabel = (by: string) => `${MONTH_NAMES[parseInt(by.slice(5, 7), 10) - 1].slice(0, 3)} ${by.slice(0, 4)}`;
+const byLabel = (by: string) => `${monthShort(by)} ${by.slice(0, 4)}`;
 
 export function GoalsScreen() {
   const st = useStore();
@@ -32,7 +34,7 @@ export function GoalsScreen() {
           const reached = goalReached(g);
           const behind = behindBy(g, st.month);
           return (
-            <Pressable key={g.id} accessibilityRole="button" accessibilityLabel={`${g.name}, ${formatMoney(g.saved)} of ${formatMoney(g.target)}${reached ? ', goal reached' : behind ? ', behind this month' : ''}`}
+            <Pressable key={g.id} accessibilityRole="button" accessibilityLabel={tr(reached ? '{0}, {1} of {2}, goal reached' : behind ? '{0}, {1} of {2}, behind this month' : '{0}, {1} of {2}', g.name, formatMoney(g.saved), formatMoney(g.target))}
               onPress={() => nav.push({ name: 'goal', id: g.id })}>
               <InnerCard style={{ gap: 8 }}>
                 <View style={s.row}><Text style={s.name}>{g.name}</Text><Money value={g.saved} style={s.amount} /></View>
@@ -69,7 +71,7 @@ export function GoalDetail({ id }: { id: string }) {
       {reached ? <Block><Text style={s.ok}>Goal reached</Text></Block>
         : behind > 0 ? (
           <View style={s.warn} accessibilityRole="alert">
-            <Text style={s.warnText}>Add {formatMoney(behind)} in {monthName(st.month)} to stay on track for {byLabel(g.by)}.</Text>
+            <Text style={s.warnText}>{tr('Add {0} in {1} to stay on track for {2}.', formatMoney(behind), monthName(st.month), byLabel(g.by))}</Text>
             <Button title="Add money" onPress={() => nav.openSheet({ name: 'addGoalMoney', id })} style={{ alignSelf: 'flex-start', marginTop: 10 }} />
           </View>
         ) : <Block><Text style={s.ok}>On track</Text></Block>}

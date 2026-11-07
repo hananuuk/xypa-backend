@@ -1,5 +1,6 @@
 import React, { createContext, useContext } from 'react';
-import { StyleProp, Text, TextStyle } from 'react-native';
+import { StyleProp, TextStyle } from 'react-native';
+import { Text } from './Text';
 import { formatMoney } from '../logic/money';
 import { tabular } from './tokens';
 

@@ -1,6 +1,8 @@
 import Slider from '@react-native-community/slider';
+import { tr } from '../i18n';
 import React, { useMemo, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from '../design/Text';
 import { BottomSheet } from '../design/BottomSheet';
 import { Money } from '../design/Amounts';
 import { Button, InnerCard } from '../design/Primitives';
@@ -51,11 +53,11 @@ export function CoverSheet({ id, onClose }: { id: string; onClose: () => void })
               <Text style={s.srcName}>{nameOf(src)}</Text>
               <Money always value={src.amount} style={s.srcAmt} />
             </View>
-            <Text style={s.hint}>Has {formatMoney(has(src))} · leaves {formatMoney(has(src) - src.amount)}</Text>
-            <Slider accessibilityLabel={`Amount from ${nameOf(src)}`} minimumValue={0} maximumValue={Math.max(cap, 1)} step={100}
+            <Text style={s.hint}>{tr('Has {0} · leaves {1}', formatMoney(has(src)), formatMoney(has(src) - src.amount))}</Text>
+            <Slider accessibilityLabel={tr('Amount from {0}', nameOf(src))} minimumValue={0} maximumValue={Math.max(cap, 1)} step={100}
               value={src.amount} onValueChange={(v) => setAmount(i, v)} minimumTrackTintColor={colors.ink} maximumTrackTintColor={colors.line2} thumbTintColor={colors.ink} disabled={cap === 0} />
             {src.kind === 'envelope' ? (
-              <Pressable accessibilityRole="button" accessibilityLabel={`Remove ${nameOf(src)}`} onPress={() => setSources(sources.filter((_, j) => j !== i))} hitSlop={8}>
+              <Pressable accessibilityRole="button" accessibilityLabel={tr('Remove {0}', nameOf(src))} onPress={() => setSources(sources.filter((_, j) => j !== i))} hitSlop={8}>
                 <Text style={s.remove}>Remove</Text>
               </Pressable>
             ) : null}
@@ -66,14 +68,14 @@ export function CoverSheet({ id, onClose }: { id: string; onClose: () => void })
       {picking ? (
         <View style={{ gap: 5, marginTop: 6 }}>
           {candidates.length === 0 ? <Text style={s.hint}>No other envelope has money to give.</Text> : candidates.map((e) => (
-            <Pressable key={e.id} accessibilityRole="button" accessibilityLabel={`Take from ${e.name}, has ${formatMoney(e.left)}`}
+            <Pressable key={e.id} accessibilityRole="button" accessibilityLabel={tr('Take from {0}, has {1}', e.name, formatMoney(e.left))}
               onPress={() => { setSources([...sources, { kind: 'envelope', envelopeId: e.id, amount: 0 }]); setPicking(false); }} style={s.pick}>
               <Text style={s.srcName}>{e.name}</Text><Text style={s.hint}>{formatMoney(e.left)}</Text>
             </Pressable>
           ))}
         </View>
       ) : (
-        <Pressable accessibilityRole="button" accessibilityLabel="Take from another envelope" onPress={() => setPicking(true)} style={s.add}>
+        <Pressable accessibilityRole="button" accessibilityLabel={tr('Take from another envelope')} onPress={() => setPicking(true)} style={s.add}>
           <Icon name="plus" size={16} /><Text style={s.addText}>Take from another envelope</Text>
         </Pressable>
       )}
@@ -88,10 +90,10 @@ export function CoverSheet({ id, onClose }: { id: string; onClose: () => void })
         </View>
         {remainingNeed === 0
           ? <View style={s.ok}><Icon name="check" size={15} color={colors.muted} /><Text style={s.hint}>Fully covered</Text></View>
-          : <Text style={s.hint}>{total > 0 ? `Partly covered · ${formatMoney(remainingNeed)} still over` : `Still over by ${formatMoney(remainingNeed)}`}</Text>}
+          : <Text style={s.hint}>{total > 0 ? tr('Partly covered · {0} still over', formatMoney(remainingNeed)) : tr('Still over by {0}', formatMoney(remainingNeed))}</Text>}
       </InnerCard>
 
-      <Button full variant="accent" title={`Move ${formatMoney(total)}`} disabled={total === 0}
+      <Button full variant="accent" title={tr('Move {0}', formatMoney(total))} disabled={total === 0}
         onPress={() => { st.cover(id, sources); onClose(); }} style={{ marginTop: 16 }} />
     </BottomSheet>
   );

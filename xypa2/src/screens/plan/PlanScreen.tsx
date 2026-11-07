@@ -1,5 +1,7 @@
 import React, { useMemo } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { tr } from '../../i18n';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '../../design/Text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Money, useAmountsHidden } from '../../design/Amounts';
 import { Icon } from '../../design/Icon';
@@ -56,7 +58,7 @@ export function PlanScreen() {
     <ScrollView style={s.fill} contentContainerStyle={[s.content, { paddingTop: insets.top + 8, paddingBottom: 130 }]} showsVerticalScrollIndicator={false}>
       <PillBar
         left={
-          <Pressable accessibilityRole="button" accessibilityLabel={`${monthName(st.month)}, choose month`} onPress={() => nav.openSheet({ name: 'monthPicker' })} style={s.month} hitSlop={8}>
+          <Pressable accessibilityRole="button" accessibilityLabel={tr('{0}, choose month', monthName(st.month))} onPress={() => nav.openSheet({ name: 'monthPicker' })} style={s.month} hitSlop={8}>
             <Text style={s.monthText}>{monthName(st.month)}</Text>
             <Icon name="chevronDown" size={18} />
           </Pressable>
@@ -78,7 +80,7 @@ export function PlanScreen() {
       {st.homeOrder.map((id) => (st.homeHidden[id] && id !== 'envs' ? null : (
         <Pressable key={id} delayLongPress={600} onLongPress={() => nav.push({ name: 'editHome' })} accessible={false}>{cards[id]}</Pressable>
       )))}
-      <Pressable accessibilityRole="button" accessibilityLabel="Customize home" onPress={() => nav.push({ name: 'editHome' })} style={s.customize}>
+      <Pressable accessibilityRole="button" accessibilityLabel={tr('Customize home')} onPress={() => nav.push({ name: 'editHome' })} style={s.customize}>
         <Text style={s.customizeText}>Customize home</Text>
       </Pressable>
     </ScrollView>
@@ -140,7 +142,7 @@ function EnvelopesBlock() {
         <View key={g}>
           <View style={s.groupRow}>
             <Text style={s.groupLabel}>{g}</Text>
-            <Text style={s.groupTotal}>{formatMoney(groupLeft(st.views, g), { hidden })} {t.plan.left}</Text>
+            <Text style={s.groupTotal}>{tr('{0} left', formatMoney(groupLeft(st.views, g), { hidden }))}</Text>
           </View>
           <View style={grid ? s.gridWrap : s.listWrap}>
             {st.views.filter((e) => e.group === g).map((e) => (

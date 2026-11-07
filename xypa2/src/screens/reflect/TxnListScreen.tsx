@@ -1,5 +1,7 @@
 import React from 'react';
-import { StyleSheet, Text } from 'react-native';
+import { tr } from '../../i18n';
+import { StyleSheet } from 'react-native';
+import { Text } from '../../design/Text';
 import { Money } from '../../design/Amounts';
 import { TxnsByDay } from '../../design/TxnRows';
 import { Block } from '../../design/Primitives';
@@ -20,7 +22,7 @@ export function TxnListScreen({ title, month, envelopeId, merchant }: { title: s
   return (
     <ScreenFrame title={title} onBack={nav.back}>
       <Block>
-        <Text style={s.label}>{monthName(month)} · {rows.length} {rows.length === 1 ? 'transaction' : 'transactions'}</Text>
+        <Text style={s.label}>{tr('{0} · {1} transactions', monthName(month), rows.length)}</Text>
         <Money value={total} style={s.hero} />
       </Block>
       <Block>

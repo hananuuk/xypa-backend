@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
-import { Animated, Pressable, StyleSheet, Text } from 'react-native';
+import { Animated, Pressable, StyleSheet } from 'react-native';
+import { Text } from './Text';
 import { colors, font } from './tokens';
 import { t } from '../i18n/en';
 

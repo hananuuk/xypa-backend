@@ -1,5 +1,7 @@
 import React, { useMemo } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { getLang, tr } from '../../i18n';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '../../design/Text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Money } from '../../design/Amounts';
 import { Block, Button, InnerCard } from '../../design/Primitives';
@@ -15,11 +17,11 @@ export function NewMonthScreen() {
   const nav = useNav();
   const insets = useSafeAreaInsets();
   const mi = parseInt(st.month.slice(5, 7), 10) - 1;
-  const cur = MONTH_NAMES[mi];
-  const next = MONTH_NAMES[(mi + 1) % 12];
+  const cur = tr(MONTH_NAMES[mi]);
+  const next = tr(MONTH_NAMES[(mi + 1) % 12]);
   const nextYear = parseInt(st.month.slice(0, 4), 10) + (mi === 11 ? 1 : 0);
   const firstOfNext = new Date(nextYear, (mi + 1) % 12, 1);
-  const dateLabel = `${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][firstOfNext.getDay()]}, 1 ${next}`;
+  const dateLabel = getLang() === 'mn' ? `${(mi + 1) % 12 + 1}-р сарын 1, ${['Ням', 'Даваа', 'Мягмар', 'Лхагва', 'Пүрэв', 'Баасан', 'Бямба'][firstOfNext.getDay()]}` : `${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][firstOfNext.getDay()]}, 1 ${next}`;
 
   const { rolled, within, income } = useMemo(() => {
     const rolled = st.views.reduce((a, e) => a + Math.max(0, e.left), 0);
@@ -37,12 +39,12 @@ export function NewMonthScreen() {
     <ScrollView style={s.fill} contentContainerStyle={[s.content, { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 40 }]} showsVerticalScrollIndicator={false}>
       <Block style={{ paddingVertical: 26 }}>
         <Text style={s.date}>{dateLabel}</Text>
-        <Text style={s.hero} accessibilityRole="header">{next}{'\n'}is here.</Text>
-        <Text style={s.sub}>Here's how {cur} went, and what you have to plan with now.</Text>
+        <Text style={s.hero} accessibilityRole="header">{tr('{0}\nis here.', next)}</Text>
+        <Text style={s.sub}>{tr('Here\'s how {0} went, and what you have to plan with now.', cur)}</Text>
       </Block>
       <Block padding={false} style={{ padding: 6, gap: 5 }}>
-        <InnerCard style={s.row}><Text style={s.rowL}>Rolled over from {cur}</Text><Money value={rolled} style={s.rowV} /></InnerCard>
-        <InnerCard style={s.row}><Text style={s.rowL}>Days within budget</Text><Text style={s.rowV}>{within} of {st.today.monthDays}</Text></InnerCard>
+        <InnerCard style={s.row}><Text style={s.rowL}>{tr('Rolled over from {0}', cur)}</Text><Money value={rolled} style={s.rowV} /></InnerCard>
+        <InnerCard style={s.row}><Text style={s.rowL}>Days within budget</Text><Text style={s.rowV}>{tr('{0} of {1}', within, st.today.monthDays)}</Text></InnerCard>
         <InnerCard style={s.row}><Text style={s.rowL}>New income</Text><Money value={income} style={s.rowV} /></InnerCard>
       </Block>
       <Block>
@@ -50,7 +52,7 @@ export function NewMonthScreen() {
         <Money value={rta} style={s.rta} />
         <Text style={s.sub}>Leftovers stay in their envelopes. Only new money needs a job.</Text>
       </Block>
-      <Block><Button full title={`Back to ${cur}`} onPress={nav.back} /></Block>
+      <Block><Button full title={tr('Back to {0}', cur)} onPress={nav.back} /></Block>
     </ScrollView>
   );
 }

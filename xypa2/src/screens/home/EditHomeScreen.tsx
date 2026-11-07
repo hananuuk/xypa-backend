@@ -1,6 +1,8 @@
 import { LinearGradient } from 'expo-linear-gradient';
+import { tr } from '../../i18n';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { AccessibilityInfo, Animated, PanResponder, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { AccessibilityInfo, Animated, PanResponder, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '../../design/Text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from '../../design/Icon';
 import { PillBar } from '../../design/Primitives';
@@ -61,7 +63,7 @@ function Card({ id, removable, onRemove, wiggle }: { id: HomeCard; removable: bo
       <Text style={s.cardLabel}>{LABEL[id]}</Text>
       <View style={{ marginTop: 10 }}><Skeleton id={id} /></View>
       {removable ? (
-        <Pressable accessibilityRole="button" accessibilityLabel={`Remove ${LABEL[id]}`} onPress={onRemove} hitSlop={6} style={s.x}>
+        <Pressable accessibilityRole="button" accessibilityLabel={tr('Remove {0}', LABEL[id])} onPress={onRemove} hitSlop={6} style={s.x}>
           <Icon name="close" size={14} color={colors.white} />
         </Pressable>
       ) : null}
@@ -103,7 +105,7 @@ export function EditHomeScreen() {
     const [m] = next.splice(from, 1);
     next.splice(to, 0, m);
     commit(next);
-    AccessibilityInfo.announceForAccessibility(`${LABEL[m]} moved to position ${to + 1} of ${next.length}`);
+    AccessibilityInfo.announceForAccessibility(tr('{0} moved to position {1} of {2}', LABEL[m], to + 1, next.length));
   };
   const remove = (id: HomeCard) => st.setHomeLayout(st.homeOrder, { ...st.homeHidden, [id]: true });
   const add = (id: HomeCard) => st.setHomeLayout([...st.homeOrder.filter((x) => x !== id), id], { ...st.homeHidden, [id]: false });
@@ -136,7 +138,7 @@ export function EditHomeScreen() {
     }
     return (
       <Animated.View key={id} {...pan.panHandlers}
-        accessible accessibilityLabel={`${LABEL[id]}, position ${i + 1} of ${visible.length}`}
+        accessible accessibilityLabel={tr('{0}, position {1} of {2}', LABEL[id], i + 1, visible.length)}
         accessibilityActions={[{ name: 'increment', label: 'Move down' }, { name: 'decrement', label: 'Move up' }]}
         onAccessibilityAction={(e) => move(i, e.nativeEvent.actionName === 'increment' ? i + 1 : i - 1)}
         style={[{ marginBottom: GAP, zIndex: dragging ? 10 : 0 }, dragging ? [s.lift, { transform: [{ translateY: dy }, { scale: 1.02 }] }] : { transform: [{ translateY: shift }] }]}>
@@ -148,21 +150,21 @@ export function EditHomeScreen() {
   return (
     <ScrollView style={s.fill} scrollEnabled={!drag} contentContainerStyle={[s.content, { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 40 }]} showsVerticalScrollIndicator={false}>
       <PillBar left={<Text style={s.title} accessibilityRole="header">Edit home</Text>}
-        right={<Pressable accessibilityRole="button" accessibilityLabel="Done" onPress={nav.back} style={s.done}><Text style={s.doneText}>Done</Text></Pressable>} />
+        right={<Pressable accessibilityRole="button" accessibilityLabel={tr('Done')} onPress={nav.back} style={s.done}><Text style={s.doneText}>Done</Text></Pressable>} />
       <Text style={s.hint}>Drag cards to reorder. Tap × to remove.</Text>
       <View>{rows}</View>
       <Text style={s.sec}>Add widgets</Text>
       {removed.length === 0 ? <Text style={s.hint}>Everything is already on your home.</Text> : (
         <View style={{ gap: 8 }}>
           {removed.map((id) => (
-            <Pressable key={id} accessibilityRole="button" accessibilityLabel={`Add ${LABEL[id]}`} onPress={() => add(id)} style={[s.ghost]}>
+            <Pressable key={id} accessibilityRole="button" accessibilityLabel={tr('Add {0}', LABEL[id])} onPress={() => add(id)} style={[s.ghost]}>
               <View style={s.plus}><Icon name="plus" size={14} color={colors.white} /></View>
               <Text style={s.cardLabel}>{LABEL[id]}</Text>
             </Pressable>
           ))}
         </View>
       )}
-      <Pressable accessibilityRole="button" accessibilityLabel="Reset to default" onPress={reset} style={s.reset}><Text style={s.resetText}>Reset to default</Text></Pressable>
+      <Pressable accessibilityRole="button" accessibilityLabel={tr('Reset to default')} onPress={reset} style={s.reset}><Text style={s.resetText}>Reset to default</Text></Pressable>
     </ScrollView>
   );
 }

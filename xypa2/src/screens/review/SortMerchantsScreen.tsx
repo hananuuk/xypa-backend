@@ -1,5 +1,7 @@
 import React, { useMemo, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { tr } from '../../i18n';
+import { StyleSheet, View } from 'react-native';
+import { Text } from '../../design/Text';
 import { Money } from '../../design/Amounts';
 import { Chip } from '../../design/Fields';
 import { Block, Button } from '../../design/Primitives';
@@ -26,8 +28,8 @@ export function SortMerchantsScreen() {
       <ScreenFrame title="Sort by merchant" onBack={nav.back}
         footer={<Button full title={more ? 'Sort the next ones' : 'Done'} onPress={() => { if (more) { nav.back(); nav.push({ name: 'sortMerchants' }); } else nav.back(); }} />}>
         <Block>
-          <Text style={s.big}>{sorted} {sorted === 1 ? 'payment' : 'payments'} sorted</Text>
-          <Text style={s.sub}>{more ? `${st.unsorted.length} still need an envelope.` : 'Everything has an envelope.'}</Text>
+          <Text style={s.big}>{tr('{0} payments sorted', sorted)}</Text>
+          <Text style={s.sub}>{more ? tr('{0} still need an envelope.', st.unsorted.length) : 'Everything has an envelope.'}</Text>
         </Block>
         {more ? <Block><Button title="Go through them one by one" variant="chip" onPress={() => { nav.back(); nav.push({ name: 'review' }); }} /></Block> : null}
       </ScreenFrame>
@@ -41,15 +43,15 @@ export function SortMerchantsScreen() {
   const file = (envId: string) => { st.fileMerchant(g.merchant, envId); setSorted(sorted + g.count); next(); };
 
   return (
-    <ScreenFrame title={`Merchant ${i + 1} of ${queue.length}`} onBack={nav.back}
+    <ScreenFrame title={tr('Merchant {0} of {1}', i + 1, queue.length)} onBack={nav.back}
       footer={<Button full title="Skip" variant="chip" onPress={next} />}>
       <Block>
-        <Text style={s.sub}>{g.count} {g.count === 1 ? 'payment' : 'payments'} · total</Text>
+        <Text style={s.sub}>{tr('{0} payments · total', g.count)}</Text>
         <Money value={g.total} style={s.amount} />
         <Text style={s.merchant}>{g.merchant}</Text>
       </Block>
       <Block>
-        <Text style={s.eyebrow}>Which envelope? This files all {g.count} and remembers it.</Text>
+        <Text style={s.eyebrow}>{tr('Which envelope? This files all {0} and remembers it.', g.count)}</Text>
         <View style={s.wrap}>
           {shown.map((e) => <Chip key={e.id} label={e.name} color={e.color} selected={e.id === suggested} accent onPress={() => file(e.id)} />)}
           {!all && st.envelopes.length > 6 ? <Chip label="All envelopes" onPress={() => setAll(true)} /> : null}

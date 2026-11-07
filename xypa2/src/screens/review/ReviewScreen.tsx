@@ -1,5 +1,7 @@
 import React, { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { tr } from '../../i18n';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '../../design/Text';
 import { Money } from '../../design/Amounts';
 import { Chip } from '../../design/Fields';
 import { Icon } from '../../design/Icon';
@@ -29,7 +31,7 @@ export function ReviewScreen() {
       <ScreenFrame title="Review" onBack={nav.back} footer={<Button full title={left ? 'Sort the rest' : 'Back to Plan'} onPress={() => (left ? setI(0) : nav.back())} />}>
         <Block>
           <View style={s.doneIcon}><Icon name="check" size={22} color={colors.white} /></View>
-          <Text style={s.doneTitle}>{left ? `${left} left to sort` : 'All sorted'}</Text>
+          <Text style={s.doneTitle}>{left ? tr('{0} left to sort', left) : 'All sorted'}</Text>
           <Text style={s.sub}>{left ? "Some payments still don't have an envelope." : 'Every payment has an envelope.'}</Text>
         </Block>
       </ScreenFrame>
@@ -43,7 +45,7 @@ export function ReviewScreen() {
   const file = (envId: string) => { st.fileTxn(txn.id, envId, rule); setRule(false); setAll(false); setI(i + 1); };
 
   return (
-    <ScreenFrame title={`Review ${i + 1} of ${queue.length}`} onBack={nav.back} right={<Button small variant="chip" title="By merchant" onPress={() => { nav.back(); nav.push({ name: 'sortMerchants' }); }} />}
+    <ScreenFrame title={tr('Review {0} of {1}', i + 1, queue.length)} onBack={nav.back} right={<Button small variant="chip" title="By merchant" onPress={() => { nav.back(); nav.push({ name: 'sortMerchants' }); }} />}
       footer={
         <View style={s.nav}>
           <Button title="Previous" variant="chip" disabled={i === 0} onPress={() => { setI(i - 1); setRule(false); setAll(false); }} />
@@ -63,7 +65,7 @@ export function ReviewScreen() {
         </View>
         <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: rule }} onPress={() => setRule(!rule)} style={s.rule}>
           <View style={[s.box, rule && s.boxOn]}>{rule ? <Icon name="check" size={14} color={colors.white} /> : null}</View>
-          <Text style={s.ruleText}>Always use this envelope for {txn.merchant}</Text>
+          <Text style={s.ruleText}>{tr('Always use this envelope for {0}', txn.merchant)}</Text>
         </Pressable>
       </Block>
     </ScreenFrame>

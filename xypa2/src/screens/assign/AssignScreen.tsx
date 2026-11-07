@@ -1,5 +1,7 @@
 import React, { useMemo, useState } from 'react';
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { tr } from '../../i18n';
+import { StyleSheet, TextInput, View } from 'react-native';
+import { Text } from '../../design/Text';
 import { Money } from '../../design/Amounts';
 import { ScreenFrame } from '../../design/ScreenFrame';
 import { Block, Button, InnerCard } from '../../design/Primitives';
@@ -68,7 +70,7 @@ export function AssignScreen() {
               <View style={s.rowTop}>
                 <View style={s.nameRow}><View style={[s.dot, { backgroundColor: e.color }]} /><Text style={s.name}>{e.name}</Text></View>
                 <TextInput
-                  accessibilityLabel={`${e.name} amount`} keyboardType="number-pad" value={b ? b.toLocaleString('en-US') : ''} placeholder="0"
+                  accessibilityLabel={tr('{0} amount', e.name)} keyboardType="number-pad" value={b ? b.toLocaleString('en-US') : ''} placeholder={tr('0')}
                   onChangeText={(txt) => set(e.id, parseMoney(txt))} style={s.input} selectTextOnFocus />
               </View>
               {hint ? (

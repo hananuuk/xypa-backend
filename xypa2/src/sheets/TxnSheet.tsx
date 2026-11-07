@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { tr } from '../i18n';
+import { StyleSheet, View } from 'react-native';
+import { Text } from '../design/Text';
 import { Money } from '../design/Amounts';
 import { BottomSheet } from '../design/BottomSheet';
 import { Chip } from '../design/Fields';
@@ -45,7 +47,7 @@ export function TxnSheet({ id, onClose }: { id: string; onClose: () => void }) {
           </View>
           {pick && pick !== t.envelopeId ? (
             <>
-              <View style={[s.wrap, { marginTop: 12 }]}><Chip label={`Always file ${t.merchant} here`} selected={always} onPress={() => setAlways(!always)} /></View>
+              <View style={[s.wrap, { marginTop: 12 }]}><Chip label={tr('Always file {0} here', t.merchant)} selected={always} onPress={() => setAlways(!always)} /></View>
               <Button full title="Save" style={{ marginTop: 16 }} onPress={() => { st.fileTxn(t.id, pick, always); onClose(); }} />
             </>
           ) : null}

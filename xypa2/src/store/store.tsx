@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { tr, setLang, deviceLang } from '../i18n';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import {
   applyCover, autoFile, normalizeCover, readyToAssign, refile, viewEnvelopes, everydayLeft, safeToSpend, deleteGoal,
@@ -112,6 +113,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, [showToast]);
 
   setCurrency(state.currency ?? 'MNT');
+  setLang(state.language ?? deviceLang());
   const month = today.month;
   const views = useMemo(() => viewEnvelopes(state.envelopes, state.txns, month), [state.envelopes, state.txns, month]);
   const rta = useMemo(() => readyToAssign(state.accounts, views, state.goals), [state.accounts, views, state.goals]);
@@ -136,7 +138,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       const clean = normalizeCover(sources, need, has);
       return { ...s, envelopes: applyCover(s.envelopes, targetId, clean), checklist: { ...s.checklist, cover: true } };
     }),
-    addEnvelope: (e) => change(`${e.name} added`, (s) => ({
+    addEnvelope: (e) => change(tr('{0} added', e.name), (s) => ({
       ...s, envelopes: [...s.envelopes, { ...e, id: `env-${Date.now()}`, budget: e.budget ?? 0, color: ['#D9774A', '#2E9E72', '#4A8CC9', '#B8901A', '#7A6BD6', '#5F8A99', '#A0699B'][s.envelopes.length % 7] }],
     })),
     addTxn: (t) => change('Transaction added', (s) => ({
@@ -159,9 +161,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       ...s, goals: s.goals.map((g) => (g.id === goalId ? { ...g, saved: g.saved + amount, addedThisMonth: g.addedThisMonth + amount } : g)),
     })),
     removeGoal: (goalId) => change('Goal deleted, money returned to Ready to Assign', (s) => ({ ...s, goals: deleteGoal(s.goals, goalId) })),
-    addGoal: (g) => change(`${g.name} added`, (s) => ({ ...s, goals: [...s.goals, { ...g, id: `goal-${Date.now()}`, saved: 0, addedThisMonth: 0 }] })),
+    addGoal: (g) => change(tr('{0} added', g.name), (s) => ({ ...s, goals: [...s.goals, { ...g, id: `goal-${Date.now()}`, saved: 0, addedThisMonth: 0 }] })),
     fixBalance: (accountId, balance) => change('Balance updated', (s) => ({ ...s, accounts: s.accounts.map((a) => (a.id === accountId ? { ...a, balance, syncOk: true } : a)) })),
-    addAccount: (a) => change(`${a.name} added`, (s) => ({ ...s, accounts: [...s.accounts, { ...a, id: `acc-${Date.now()}`, syncOk: true }] })),
+    addAccount: (a) => change(tr('{0} added', a.name), (s) => ({ ...s, accounts: [...s.accounts, { ...a, id: `acc-${Date.now()}`, syncOk: true }] })),
     setProfileName: (name) => setState((s) => ({ ...s, profile: { ...s.profile, name } })),
     setSession: (me) => setState((s) => ({ ...s, profile: { name: s.profile?.name || me.name || '', email: me.email, gmail: me.gmailConnected } })),
     setCurrencyCode: (c) => setState((s) => ({ ...s, currency: c })),
@@ -169,7 +171,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     importStatement: (found) => {
       const r = planImport(found, state.accounts, state.envelopes, state.txns, state.rules, month);
       if (r.added > 0 || r.newAccounts.length > 0) {
-        change(`${r.added} transaction${r.added === 1 ? '' : 's'} added`, (s) => ({ ...s, accounts: r.accounts, txns: r.txns }));
+        change(tr('{0} transactions added', r.added), (s) => ({ ...s, accounts: r.accounts, txns: r.txns }));
       }
       return r;
     },

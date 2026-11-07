@@ -1,6 +1,8 @@
 import * as DocumentPicker from 'expo-document-picker';
+import { tr } from '../../i18n';
 import React, { useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '../../design/Text';
 import * as XLSX from 'xlsx';
 import { pdfToText } from '../../api/client';
 import { colors, font } from '../../design/tokens';
@@ -22,7 +24,7 @@ async function readFile(a: DocumentPicker.DocumentPickerAsset, bank: string | nu
   const buf = await (await fetch(a.uri)).arrayBuffer();
   const name = a.name.toLowerCase();
   if (name.endsWith('.pdf') || a.mimeType === 'application/pdf') {
-    if (buf.byteLength > 4 * 1024 * 1024) throw new Error(`${a.name} is bigger than 4 MB`);
+    if (buf.byteLength > 4 * 1024 * 1024) throw new Error(tr('{0} is bigger than 4 MB', a.name));
     const text = (await pdfToText(toBase64(buf))).text;
     return parseKnownStatement(text)?.found ?? parseText(text, bank ?? 'Bank');
   }
@@ -57,7 +59,7 @@ export function StatementStep({ onBack, onRead, plain }: { onBack: () => void; o
       if (found.length === 0) setMsg("We couldn't find payments in that file. Try the Excel or CSV version of your statement, or add things yourself.");
       else onRead(found);
     } catch (e) {
-      setMsg(`We couldn't read that file: ${(e as Error).message}`);
+      setMsg(tr('We couldn\'t read that file: {0}', (e as Error).message));
     }
     setBusy(false);
   };
@@ -72,7 +74,7 @@ export function StatementStep({ onBack, onRead, plain }: { onBack: () => void; o
       <Text style={s.hint}>M bank and Golomt statements are recognised on their own. Pick your bank for any other.</Text>
       <View style={s.chips}>
         {BANKS.map((b) => (
-          <Pressable key={b} accessibilityRole="radio" accessibilityState={{ selected: bank === b }} accessibilityLabel={b} onPress={() => setBank(bank === b ? null : b)} style={[s.chip, bank === b && { backgroundColor: ob.ink }]}>
+          <Pressable key={b} accessibilityRole="radio" accessibilityState={{ selected: bank === b }} accessibilityLabel={tr(b)} onPress={() => setBank(bank === b ? null : b)} style={[s.chip, bank === b && { backgroundColor: ob.ink }]}>
             <Text style={[s.chipT, bank === b && { color: colors.white }]}>{b}</Text>
           </Pressable>
         ))}
@@ -86,7 +88,7 @@ export function StatementStep({ onBack, onRead, plain }: { onBack: () => void; o
       <Text style={s.h}>3. Add the files</Text>
       {files.map((f) => (
         <View key={f.uri} style={s.file}><Text style={s.fileT} numberOfLines={1}>{f.name}</Text>
-          <Pressable accessibilityRole="button" accessibilityLabel={`Remove ${f.name}`} onPress={() => setFiles((x) => x.filter((y) => y.uri !== f.uri))} hitSlop={10}><Text style={s.rm}>Remove</Text></Pressable></View>
+          <Pressable accessibilityRole="button" accessibilityLabel={tr('Remove {0}', f.name)} onPress={() => setFiles((x) => x.filter((y) => y.uri !== f.uri))} hitSlop={10}><Text style={s.rm}>Remove</Text></Pressable></View>
       ))}
       <Pressable accessibilityRole="button" accessibilityLabel={files.length ? 'Add another statement' : 'Choose files'} onPress={pick} style={s.drop}>
         <Text style={s.dropT}>{files.length ? '+ Add another statement' : 'Choose PDF, Excel or CSV files'}</Text>

@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, Animated, Pressable, StyleSheet, Text, View } from 'react-native';
+import { tr } from '../../i18n';
+import { AccessibilityInfo, Animated, Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '../../design/Text';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, Defs, Pattern, Rect } from 'react-native-svg';
 import { Button } from '../../design/Primitives';
@@ -43,7 +45,7 @@ export function FirstWeekCard({ checklist, onStart, onHide }: { checklist: Check
   }, [reduce, pulse]);
 
   return (
-    <View style={s.card} accessibilityLabel={`First week, ${doneCount} of 4 done`}>
+    <View style={s.card} accessibilityLabel={tr('First week, {0} of 4 done', doneCount)}>
       <LinearGradient colors={palettes[finished ? 4 : Math.min(doneCount, 3)] as [string, string, string]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
       <Svg style={StyleSheet.absoluteFill} pointerEvents="none">
         <Defs>
@@ -53,7 +55,7 @@ export function FirstWeekCard({ checklist, onStart, onHide }: { checklist: Check
       </Svg>
       <View style={s.top}>
         <Text style={s.eyebrow}>First week</Text>
-        <Pressable accessibilityRole="button" accessibilityLabel="Hide first-week checklist" onPress={onHide} hitSlop={12} style={s.x}>
+        <Pressable accessibilityRole="button" accessibilityLabel={tr('Hide first-week checklist')} onPress={onHide} hitSlop={12} style={s.x}>
           <Icon name="close" size={20} />
         </Pressable>
       </View>

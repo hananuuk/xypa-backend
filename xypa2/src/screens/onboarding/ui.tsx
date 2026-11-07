@@ -1,5 +1,7 @@
 import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { tr } from '../../i18n';
+import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Text } from '../../design/Text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 import { Icon } from '../../design/Icon';
@@ -28,7 +30,7 @@ export function Poster({ bg = ob.pink, glowA = '#E98A80', glowB = '#E9F181', chi
 
 export function Switch({ value, onChange, label }: { value: boolean; onChange: (v: boolean) => void; label: string }) {
   return (
-    <Pressable accessibilityRole="switch" accessibilityLabel={label} accessibilityState={{ checked: value }} onPress={() => onChange(!value)} hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+    <Pressable accessibilityRole="switch" accessibilityLabel={tr(label)} accessibilityState={{ checked: value }} onPress={() => onChange(!value)} hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
       style={[sw.track, { backgroundColor: value ? ob.ink : '#C9C5BD' }]}>
       <View style={[sw.knob, { alignSelf: value ? 'flex-end' : 'flex-start' }]} />
     </Pressable>
@@ -42,7 +44,7 @@ const sw = StyleSheet.create({
 /** Right-aligned thousands-separated amount input. Empty shows the placeholder 0. */
 export function AmountInput({ value, onChange, label, width = 150 }: { value: number; onChange: (n: number) => void; label: string; width?: number }) {
   return (
-    <TextInput accessibilityLabel={label} keyboardType="number-pad" value={value ? value.toLocaleString('en-US') : ''} placeholder="0" placeholderTextColor={colors.muted}
+    <TextInput accessibilityLabel={tr(label)} keyboardType="number-pad" value={value ? value.toLocaleString('en-US') : ''} placeholder={tr('0')} placeholderTextColor={colors.muted}
       onChangeText={(t) => onChange(parseMoney(t))} style={[a.input, { width }]} selectTextOnFocus />
   );
 }
@@ -56,9 +58,9 @@ export function StepFrame({ step, title, subtitle, onBack, children, footer }: {
   return (
     <View style={{ flex: 1, backgroundColor: ob.page, paddingTop: insets.top + 8 }}>
       <View style={sf.head}>
-        <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={onBack} style={sf.back}><Icon name="chevronLeft" size={20} /></Pressable>
+        <Pressable accessibilityRole="button" accessibilityLabel={tr('Back')} onPress={onBack} style={sf.back}><Icon name="chevronLeft" size={20} /></Pressable>
         {step > 0 ? (<>
-          <View style={sf.segs} accessible accessibilityLabel={`Step ${step} of 6`}>
+          <View style={sf.segs} accessible accessibilityLabel={tr('Step {0} of 6', step)}>
             {[1, 2, 3, 4, 5, 6].map((i) => <View key={i} style={[sf.seg, { backgroundColor: i <= step ? ob.ink : '#DAD6CE' }]} />)}
           </View>
           <Text style={sf.count}>{step} of 6</Text>
@@ -88,10 +90,10 @@ const sf = StyleSheet.create({
 export function CostFooter({ regular, everyday, yearly }: { regular: number; everyday: number; yearly?: number }) {
   const total = regular + everyday + (yearly ?? 0);
   return (
-    <View style={cf.box} accessible accessibilityLabel={`Your month costs ${formatMoney(total)}`}>
+    <View style={cf.box} accessible accessibilityLabel={tr('Your month costs {0}', formatMoney(total))}>
       <View style={{ flex: 1 }}>
         <Text style={cf.label}>YOUR MONTH COSTS</Text>
-        <Text style={cf.sub}>Regular {formatMoney(regular)} · Everyday {formatMoney(everyday)}{yearly !== undefined ? ` · Yearly ${formatMoney(yearly)}` : ''}</Text>
+        <Text style={cf.sub}>{tr(yearly !== undefined ? 'Regular {0} · Everyday {1} · Yearly {2}' : 'Regular {0} · Everyday {1}', formatMoney(regular), formatMoney(everyday), formatMoney(yearly ?? 0))}</Text>
       </View>
       <Text style={cf.total}>{formatMoney(total)}</Text>
     </View>
@@ -106,7 +108,7 @@ const cf = StyleSheet.create({
 
 export function BigButton({ title, onPress, disabled }: { title: string; onPress: () => void; disabled?: boolean }) {
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel={title} accessibilityState={{ disabled: !!disabled }} disabled={disabled} onPress={onPress}
+    <Pressable accessibilityRole="button" accessibilityLabel={tr(title)} accessibilityState={{ disabled: !!disabled }} disabled={disabled} onPress={onPress}
       style={({ pressed }) => [bb.btn, disabled && { backgroundColor: '#CAC7C1' }, pressed && { opacity: 0.85 }]}>
       <Text style={[bb.text, disabled && { color: '#6F6B64' }]}>{title}</Text>
     </Pressable>
@@ -127,7 +129,7 @@ const sh = StyleSheet.create({
 });
 
 export const DashedAdd = ({ label, onPress }: { label: string; onPress: () => void }) => (
-  <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={da.btn}><Text style={da.t}>{label}</Text></Pressable>
+  <Pressable accessibilityRole="button" accessibilityLabel={tr(label)} onPress={onPress} style={da.btn}><Text style={da.t}>{label}</Text></Pressable>
 );
 const da = StyleSheet.create({
   btn: { alignSelf: 'flex-start', minHeight: 48, borderRadius: 999, borderWidth: 1.5, borderStyle: 'dashed', borderColor: colors.line2, paddingHorizontal: 20, justifyContent: 'center', marginTop: 16 },

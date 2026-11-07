@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { AccessibilityInfo, Animated, Easing, PanResponder, Pressable, StyleSheet, Text, View } from 'react-native';
+import { tr } from '../../i18n';
+import { AccessibilityInfo, Animated, Easing, PanResponder, Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '../../design/Text';
 import { Money } from '../../design/Amounts';
 import { Block } from '../../design/Primitives';
 import { colors, font } from '../../design/tokens';
@@ -64,7 +66,7 @@ export function SafeToSpendBlock({ safe, today, everydayShare, onExplain, onChec
         onAccessibilityAction={(e) => go(e.nativeEvent.actionName === 'increment' ? 1 : -1)}>
         <Animated.View style={[s.row, { transform: [{ translateX: x }] }]}>
           <Text style={s.title}>{t.plan.safeToSpend} <Text style={s.titleStrong}>{label[period]}</Text></Text>
-          <Pressable accessibilityRole="button" accessibilityLabel={`${label[period]}: explain`} onPress={() => { onExplain(); onChecked(); }} hitSlop={10}>
+          <Pressable accessibilityRole="button" accessibilityLabel={tr('{0}: explain', label[period])} onPress={() => { onExplain(); onChecked(); }} hitSlop={10}>
             <Money value={amount} style={s.amount} />
           </Pressable>
         </Animated.View>
@@ -92,8 +94,8 @@ export function SafeToSpendBlock({ safe, today, everydayShare, onExplain, onChec
 
 function caption(p: Period, today: Today) {
   if (p === 'today') return t.plan.dayOf(today.day, today.monthDays, today.monthDays - today.day);
-  if (p === 'week') return `Rest of the week · ${Math.min(7 - today.weekday, Math.max(1, today.monthDays - today.day + 1))} days`;
-  return `${today.monthDays - today.day} days left this month`;
+  if (p === 'week') return tr('Rest of the week · {0} days', Math.min(7 - today.weekday, Math.max(1, today.monthDays - today.day + 1)));
+  return tr('{0} days left this month', today.monthDays - today.day);
 }
 
 /** One dash per day of the month. Past days ink, today accent, future days line. */

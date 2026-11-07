@@ -1,5 +1,7 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { tr, deviceLang } from '../../i18n';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '../../design/Text';
 import { Icon } from '../../design/Icon';
 import { ScreenFrame } from '../../design/ScreenFrame';
 import { Block, InnerCard } from '../../design/Primitives';
@@ -22,7 +24,7 @@ function Row({ label, value, onPress, danger }: { label: string; value?: string;
 
 function Toggle({ label, value, onChange }: { label: string; value: boolean; onChange: (v: boolean) => void }) {
   return (
-    <Pressable accessibilityRole="switch" accessibilityLabel={label} accessibilityState={{ checked: value }} onPress={() => onChange(!value)}>
+    <Pressable accessibilityRole="switch" accessibilityLabel={tr(label)} accessibilityState={{ checked: value }} onPress={() => onChange(!value)}>
       <InnerCard style={s.row}>
         <Text style={s.label}>{label}</Text>
         <View style={[s.track, { backgroundColor: value ? colors.ink : '#8F8B83' }]}><View style={[s.knob, { alignSelf: value ? 'flex-end' : 'flex-start' }]} /></View>
@@ -61,12 +63,12 @@ export function SettingsScreen() {
         )}
         {msg ? <Text style={s.hint} accessibilityLiveRegion="polite">{msg}</Text> : null}
         <Row label="Add a bank statement" onPress={() => nav.push({ name: 'importStatement' })} />
-        <InnerCard style={s.row}><Text style={s.label}>Merchant rules</Text><Text style={s.value}>{st.rules.length} {st.rules.length === 1 ? 'rule' : 'rules'}</Text></InnerCard>
+        <InnerCard style={s.row}><Text style={s.label}>Merchant rules</Text><Text style={s.value}>{tr('{0} rules', st.rules.length)}</Text></InnerCard>
       </Block>
       <Block padding={false} style={s.block}>
         <Title t="BUDGET" />
         <Row label="Currency" value={`${cur.name} ${cur.symbol}`} onPress={() => nav.openSheet({ name: 'currency' })} />
-        <Row label="Language" value={st.language === 'mn' ? 'Монгол' : 'English'} onPress={() => nav.openSheet({ name: 'language' })} />
+        <Row label="Language" value={(st.language ?? deviceLang()) === 'mn' ? 'Монгол' : 'English'} onPress={() => nav.openSheet({ name: 'language' })} />
         <InnerCard style={s.row}><Text style={s.label}>Safe to spend uses</Text><Text style={s.value}>Everyday</Text></InnerCard>
       </Block>
       <Block padding={false} style={s.block}>

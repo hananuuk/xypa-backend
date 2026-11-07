@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
+import { tr } from '../../i18n';
 import { BankAvatar } from '../../design/BankAvatar';
 import { BANKS, bankFor } from '../../data/banks';
 import { authenticate, me } from '../../api/client';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Text } from '../../design/Text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { colors, font } from '../../design/tokens';
@@ -40,7 +42,7 @@ export function Onboarding() {
     setBusy(true); setAuthMsg(null);
     const r = await authenticate('signin');
     setBusy(false);
-    if (r.ok) { st.setSession(r.me); setStep('intro'); } else if (r.reason !== 'cancelled') setAuthMsg(`Sign-in didn't work${r.message ? `: ${r.message}` : ''}. Try again.`);
+    if (r.ok) { st.setSession(r.me); setStep('intro'); } else if (r.reason !== 'cancelled') setAuthMsg(r.message ? tr('Sign-in didn\'t work: {0}. Try again.', r.message) : tr('Sign-in didn\'t work. Try again.'));
   };
   const allowGmail = async () => {
     setBusy(true); setAuthMsg(null);
@@ -48,7 +50,7 @@ export function Onboarding() {
     setBusy(false);
     if (r.ok) { st.setSession(r.me); setStep('reading'); }
     else if (r.reason === 'wrong_account') setAuthMsg('Please pick the same Google account you signed in with.');
-    else if (r.reason !== 'cancelled') setAuthMsg(`Gmail access didn't work${r.message ? `: ${r.message}` : ''}. Try again, or set things up yourself.`);
+    else if (r.reason !== 'cancelled') setAuthMsg(r.message ? tr('Gmail access didn\'t work: {0}. Try again, or set things up yourself.', r.message) : tr('Gmail access didn\'t work. Try again, or set things up yourself.'));
   };
   const otherAccount = async () => { const r = await authenticate('signin'); if (r.ok) { st.setSession(r.me); setStep('intro'); } };
   const useFound = (f: Found[]) => {
@@ -86,7 +88,7 @@ function Hello({ onStart, busy, message }: { onStart: () => void; busy: boolean;
       <Text style={s.hello} accessibilityRole="header">Give every tögrög a job.</Text>
       <Text style={s.helloSub}>Plan the money you already have, one envelope at a time, and always know what's safe to spend.</Text>
       <View style={{ height: 28 }} />
-      <Pressable accessibilityRole="button" accessibilityLabel="Continue with Google" accessibilityState={{ disabled: busy }} disabled={busy} onPress={onStart} style={[s.google, busy && { opacity: 0.6 }]}>
+      <Pressable accessibilityRole="button" accessibilityLabel={tr('Continue with Google')} accessibilityState={{ disabled: busy }} disabled={busy} onPress={onStart} style={[s.google, busy && { opacity: 0.6 }]}>
         <View style={s.g}><Text style={s.gText}>G</Text></View>
         <Text style={s.googleText}>Continue with Google</Text>
       </Pressable>
@@ -111,8 +113,8 @@ function Intro({ onBack, onManual, onStatement, onAllow, busy, message }: { onBa
       footer={<>
         <BigButton title="Allow Gmail access" disabled={busy} onPress={onAllow} />
         {message ? <Text style={s.soon} accessibilityLiveRegion="polite">{message}</Text> : <Text style={s.soon}>Read only. Bank senders only.</Text>}
-        <Pressable accessibilityRole="button" accessibilityLabel="Upload a statement instead" onPress={onStatement} style={s.link}><Text style={s.linkText}>Upload a statement instead</Text></Pressable>
-        <Pressable accessibilityRole="button" accessibilityLabel="I'll set things up myself" onPress={onManual} style={s.link}><Text style={s.linkText}>I'll set things up myself</Text></Pressable>
+        <Pressable accessibilityRole="button" accessibilityLabel={tr('Upload a statement instead')} onPress={onStatement} style={s.link}><Text style={s.linkText}>Upload a statement instead</Text></Pressable>
+        <Pressable accessibilityRole="button" accessibilityLabel={tr('I\'ll set things up myself')} onPress={onManual} style={s.link}><Text style={s.linkText}>I'll set things up myself</Text></Pressable>
       </>}>
       <SectionHead title="XYPA CAN" />
       {['Read your bank emails', 'Find your regular payments', 'Sort your spending'].map((t) => <Text key={t} style={s.li}>✓  {t}</Text>)}
@@ -129,21 +131,21 @@ function Accounts({ n, draft, set, onBack, onNext }: P) {
   const scanned = draft.accounts.some((a) => a.note);
   const add = () => { if (!name.trim()) return; set({ accounts: [...draft.accounts, { id: uid(), name: name.trim(), kind: 'Checking', balance: 0 }] }); setName(''); };
   return (
-    <StepFrame step={n} title={scanned ? `We found ${draft.accounts.length} ${draft.accounts.length === 1 ? 'account' : 'accounts'}` : 'Where is your money?'}
+    <StepFrame step={n} title={scanned ? tr('We found {0} accounts', draft.accounts.length) : 'Where is your money?'}
       subtitle={scanned ? 'Check the balances. Fix any that look off, and add any account we missed.' : 'Add each bank account you use. Balances only, no logins.'} onBack={onBack}
       footer={<BigButton title="Looks right" disabled={total <= 0} onPress={onNext} />}>
       {draft.accounts.map((a) => (
-        <Row key={a.id} icon={<BankAvatar name={a.name} size={36} />} title={a.name} note={a.note ?? 'Added by hand'}><AmountInput label={`${a.name} balance`} value={a.balance} onChange={(v) => set({ accounts: draft.accounts.map((x) => (x.id === a.id ? { ...x, balance: v } : x)) })} /></Row>
+        <Row key={a.id} icon={<BankAvatar name={a.name} size={36} />} title={a.name} note={a.note ?? 'Added by hand'}><AmountInput label={tr('{0} balance', a.name)} value={a.balance} onChange={(v) => set({ accounts: draft.accounts.map((x) => (x.id === a.id ? { ...x, balance: v } : x)) })} /></Row>
       ))}
       <Text style={s.rowN}>Add a bank</Text>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
         {BANKS.filter((b) => !draft.accounts.some((a) => bankFor(a.name)?.id === b.id)).map((b) => (
-          <Pressable key={b.id} accessibilityRole="button" accessibilityLabel={`Add ${b.name}`} onPress={() => set({ accounts: [...draft.accounts, { id: uid(), name: b.name, kind: 'Checking', balance: 0 }] })} style={s.addBtn}><Text style={s.addText}>{b.name}</Text></Pressable>
+          <Pressable key={b.id} accessibilityRole="button" accessibilityLabel={tr('Add {0}', b.name)} onPress={() => set({ accounts: [...draft.accounts, { id: uid(), name: b.name, kind: 'Checking', balance: 0 }] })} style={s.addBtn}><Text style={s.addText}>{b.name}</Text></Pressable>
         ))}
       </View>
       <View style={s.addRow}>
-        <TextInput accessibilityLabel="Account name" placeholder="Account name" placeholderTextColor={colors.muted} value={name} onChangeText={setName} onSubmitEditing={add} style={s.nameInput} />
-        <Pressable accessibilityRole="button" accessibilityLabel="Add account" onPress={add} style={s.addBtn}><Text style={s.addText}>Add</Text></Pressable>
+        <TextInput accessibilityLabel={tr('Account name')} placeholder={tr('Account name')} placeholderTextColor={colors.muted} value={name} onChangeText={setName} onSubmitEditing={add} style={s.nameInput} />
+        <Pressable accessibilityRole="button" accessibilityLabel={tr('Add account')} onPress={add} style={s.addBtn}><Text style={s.addText}>Add</Text></Pressable>
       </View>
       <View style={s.totalRow}><Text style={s.totalL}>Money to plan with</Text><Text style={s.totalV}>{formatMoney(total)}</Text></View>
       <View style={s.note}><Text style={s.noteText}>We only plan money you have today, not next month's salary.</Text></View>
@@ -163,18 +165,18 @@ function Regular({ n, draft, set, onBack, onNext }: P) {
   const save = () => { if (!name.trim() || !amt) return; set({ regular: [...draft.regular, { id: uid(), name: name.trim(), kind, monthly: amt, note: 'Every month', on: true }] }); setName(''); setAmt(0); setOpen(false); };
   const groups: { k: 'Loan' | 'Bill' | 'Subscription'; label: string }[] = [{ k: 'Loan', label: 'LOANS' }, { k: 'Bill', label: 'BILLS' }, { k: 'Subscription', label: 'SUBSCRIPTIONS' }];
   return (
-    <StepFrame step={n} title={draft.regular.length ? `${draft.accounts.some((a) => a.note) ? 'We found ' : ''}${draft.regular.length} regular ${draft.regular.length === 1 ? 'payment' : 'payments'}` : 'Regular payments'} subtitle="Rent, bills, subscriptions and loans that leave your account every month. Turn off any that aren't yours." onBack={onBack}
-      footer={<><CostFooter regular={regularTotal(draft)} everyday={usualTotal(draft)} /><BigButton title={on ? `Make ${on} into envelopes` : 'Continue'} onPress={onNext} /></>}>
+    <StepFrame step={n} title={draft.regular.length ? tr(draft.accounts.some((a) => a.note) ? 'We found {0} regular payments' : '{0} regular payments', draft.regular.length) : 'Regular payments'} subtitle="Rent, bills, subscriptions and loans that leave your account every month. Turn off any that aren't yours." onBack={onBack}
+      footer={<><CostFooter regular={regularTotal(draft)} everyday={usualTotal(draft)} /><BigButton title={on ? tr('Make {0} into envelopes', on) : 'Continue'} onPress={onNext} /></>}>
       {groups.map((g) => {
         const items = draft.regular.filter((r) => r.kind === g.k);
         if (!items.length) return null;
         return (
           <View key={g.k}>
-            <SectionHead title={g.label} right={`${formatMoney(items.filter((r) => r.on).reduce((a, r) => a + r.monthly, 0))} / month`} />
+            <SectionHead title={g.label} right={tr('{0} / month', formatMoney(items.filter((r) => r.on).reduce((a, r) => a + r.monthly, 0)))} />
             {items.map((r) => (
               <Row key={r.id} title={r.name} note={r.note}>
                 <Text style={[s.amt, !r.on && s.struck]}>{formatMoney(r.monthly)}</Text>
-                <View style={{ width: 10 }} /><Switch label={`Keep ${r.name}`} value={r.on} onChange={(v) => set({ regular: draft.regular.map((x) => (x.id === r.id ? { ...x, on: v } : x)) })} />
+                <View style={{ width: 10 }} /><Switch label={tr('Keep {0}', r.name)} value={r.on} onChange={(v) => set({ regular: draft.regular.map((x) => (x.id === r.id ? { ...x, on: v } : x)) })} />
               </Row>
             ))}
           </View>
@@ -182,7 +184,7 @@ function Regular({ n, draft, set, onBack, onNext }: P) {
       })}
       {open ? (
         <View style={s.form}>
-          <TextInput accessibilityLabel="Payment name" placeholder="Name, e.g. Rent" placeholderTextColor={colors.muted} value={name} onChangeText={setName} style={s.nameInput} />
+          <TextInput accessibilityLabel={tr('Payment name')} placeholder={tr('Name, e.g. Rent')} placeholderTextColor={colors.muted} value={name} onChangeText={setName} style={s.nameInput} />
           <View style={s.kinds}>{(['Bill', 'Loan', 'Subscription'] as const).map((k) => (
             <Pressable key={k} accessibilityRole="radio" accessibilityState={{ selected: kind === k }} onPress={() => setKind(k)} style={[s.kind, kind === k && { backgroundColor: ob.ink }]}><Text style={[s.kindT, kind === k && { color: colors.white }]}>{k}</Text></Pressable>
           ))}</View>
@@ -205,16 +207,16 @@ function Usual({ n, draft, set, onBack, onNext }: P) {
       footer={<><CostFooter regular={regularTotal(draft)} everyday={usualTotal(draft)} /><BigButton title="Continue" onPress={onNext} /></>}>
       {draft.usual.map((u) => (
         <View key={u.id} style={s.usualRow}>
-          <Row title={u.name} note={u.payments ? `about ${u.payments} payments a month` : 'Usual month'}>
+          <Row title={u.name} note={u.payments ? tr('about {0} payments a month', u.payments) : 'Usual month'}>
             <Text style={[s.amt, !u.on && s.struck]}>{formatMoney(u.monthly)}</Text>
-            <View style={{ width: 10 }} /><Switch label={`Keep ${u.name}`} value={u.on} onChange={(v) => set({ usual: draft.usual.map((x) => (x.id === u.id ? { ...x, on: v } : x)) })} />
+            <View style={{ width: 10 }} /><Switch label={tr('Keep {0}', u.name)} value={u.on} onChange={(v) => set({ usual: draft.usual.map((x) => (x.id === u.id ? { ...x, on: v } : x)) })} />
           </Row>
           <View style={s.track}><View style={[s.fill, { width: `${(u.monthly / max) * 100}%` }]} /></View>
         </View>
       ))}
       {open ? (
         <View style={s.form}>
-          <TextInput accessibilityLabel="Envelope name" placeholder="Name, e.g. Groceries" placeholderTextColor={colors.muted} value={name} onChangeText={setName} style={s.nameInput} />
+          <TextInput accessibilityLabel={tr('Envelope name')} placeholder={tr('Name, e.g. Groceries')} placeholderTextColor={colors.muted} value={name} onChangeText={setName} style={s.nameInput} />
           <Row title="Usual month"><AmountInput label="Usual monthly amount" value={amt} onChange={setAmt} /></Row>
           <BigButton title="Add envelope" disabled={!name.trim() || !amt} onPress={save} />
         </View>
@@ -231,19 +233,19 @@ function Yearly({ n, draft, set, onBack, onNext }: P) {
   const save = () => { if (!name.trim() || !amt) return; set({ yearly: [...draft.yearly, { id: uid(), name: name.trim(), when: 'Once a year', perYear: amt, on: true }] }); setName(''); setAmt(0); setOpen(false); };
   return (
     <StepFrame step={n} title="Anything that happens a few times a year?" subtitle="Big costs that don't come every month. Put a little aside each month and they never catch you off guard." onBack={onBack}
-      footer={<><CostFooter regular={regularTotal(draft)} everyday={usualTotal(draft)} yearly={yearlyMonthly(draft)} /><BigButton title={count ? `Continue with ${count} envelopes` : 'Continue'} disabled={!count} onPress={onNext} /></>}>
+      footer={<><CostFooter regular={regularTotal(draft)} everyday={usualTotal(draft)} yearly={yearlyMonthly(draft)} /><BigButton title={count ? tr('Continue with {0} envelopes', count) : 'Continue'} disabled={!count} onPress={onNext} /></>}>
       {draft.yearly.map((y) => (
         <View key={y.id} style={s.yRow}>
           <Row title={y.name} note={y.when}>
             {y.on ? <Text style={s.perMo}>{formatMoney(monthlySaving(y.perYear))}/mo</Text> : null}
-            <View style={{ width: 10 }} /><Switch label={`Save for ${y.name}`} value={y.on} onChange={(v) => set({ yearly: draft.yearly.map((x) => (x.id === y.id ? { ...x, on: v } : x)) })} />
+            <View style={{ width: 10 }} /><Switch label={tr('Save for {0}', y.name)} value={y.on} onChange={(v) => set({ yearly: draft.yearly.map((x) => (x.id === y.id ? { ...x, on: v } : x)) })} />
           </Row>
-          {y.on ? <Row title="About this much a year"><AmountInput label={`${y.name} per year`} value={y.perYear} width={140} onChange={(v) => set({ yearly: draft.yearly.map((x) => (x.id === y.id ? { ...x, perYear: v } : x)) })} /></Row> : null}
+          {y.on ? <Row title="About this much a year"><AmountInput label={tr('{0} per year', y.name)} value={y.perYear} width={140} onChange={(v) => set({ yearly: draft.yearly.map((x) => (x.id === y.id ? { ...x, perYear: v } : x)) })} /></Row> : null}
         </View>
       ))}
       {open ? (
         <View style={s.form}>
-          <TextInput accessibilityLabel="Name" placeholder="Name, e.g. New laptop" placeholderTextColor={colors.muted} value={name} onChangeText={setName} style={s.nameInput} />
+          <TextInput accessibilityLabel={tr('Name')} placeholder={tr('Name, e.g. New laptop')} placeholderTextColor={colors.muted} value={name} onChangeText={setName} style={s.nameInput} />
           <Row title="About this much a year"><AmountInput label="Amount per year" value={amt} width={140} onChange={setAmt} /></Row>
           <BigButton title="Add" disabled={!name.trim() || !amt} onPress={save} />
         </View>
@@ -259,7 +261,7 @@ function Assign({ n, draft, assigned, setAssigned, onBack, onDone }: { n: number
   const cost = monthCost(draft);
   const left = have - assignedTotal(assigned);
   const w = wants(draft);
-  const fill = () => { const r = fillWhatFits(draft); setAssigned(r.filled); setFilledNote(r.shortfall > 0 ? `Filled what fits. ${formatMoney(r.shortfall)} short this month, add it when your salary arrives.` : 'Filled every envelope.'); };
+  const fill = () => { const r = fillWhatFits(draft); setAssigned(r.filled); setFilledNote(r.shortfall > 0 ? tr('Filled what fits. {0} short this month, add it when your salary arrives.', formatMoney(r.shortfall)) : 'Filled every envelope.'); };
   const group = (g: string, label: string, right?: string) => {
     const items = w.filter((x) => x.group === g);
     if (!items.length) return null;
@@ -267,8 +269,8 @@ function Assign({ n, draft, assigned, setAssigned, onBack, onDone }: { n: number
       <View key={g}>
         <SectionHead title={label} right={right} />
         {items.map((x) => (
-          <Row key={x.id} title={x.name} note={g === 'Everyday' ? `Usually ${formatMoney(x.amount)}` : g === 'Once in a while' ? 'Saved monthly' : 'Every month'}>
-            <AmountInput label={`${x.name} amount`} value={assigned[x.id] ?? 0} onChange={(v) => setAssigned({ ...assigned, [x.id]: v })} />
+          <Row key={x.id} title={x.name} note={g === 'Everyday' ? tr('Usually {0}', formatMoney(x.amount)) : g === 'Once in a while' ? 'Saved monthly' : 'Every month'}>
+            <AmountInput label={tr('{0} amount', x.name)} value={assigned[x.id] ?? 0} onChange={(v) => setAssigned({ ...assigned, [x.id]: v })} />
           </Row>
         ))}
       </View>
@@ -286,8 +288,8 @@ function Assign({ n, draft, assigned, setAssigned, onBack, onDone }: { n: number
         <View style={[s.card, { flex: 1 }]}><Text style={s.rowN}>You have</Text><Text style={s.cardMid}>{formatMoney(have)}</Text></View>
         <View style={[s.card, { flex: 1 }]}><Text style={s.rowN}>Your month costs about</Text><Text style={s.cardMid}>{formatMoney(cost)}</Text></View>
       </View>
-      {cost > have ? <View style={s.note}><Text style={s.noteText}>You have {formatMoney(cost - have)} less than a month costs. That's normal at the start: plan what you have now, and add the rest when money comes in.</Text></View> : null}
-      <Pressable accessibilityRole="button" accessibilityLabel="Fill with usual amounts" onPress={fill} style={s.fillBtn}><Text style={s.fillT}>Fill with usual amounts</Text></Pressable>
+      {cost > have ? <View style={s.note}><Text style={s.noteText}>{tr('You have {0} less than a month costs. That\'s normal at the start: plan what you have now, and add the rest when money comes in.', formatMoney(cost - have))}</Text></View> : null}
+      <Pressable accessibilityRole="button" accessibilityLabel={tr('Fill with usual amounts')} onPress={fill} style={s.fillBtn}><Text style={s.fillT}>Fill with usual amounts</Text></Pressable>
       {filledNote ? <Text accessibilityLiveRegion="polite" style={s.filledNote}>{filledNote}</Text> : null}
       {group('Bills', 'REGULAR PAYMENTS')}
       {group('Once in a while', 'ONCE IN A WHILE', 'saved monthly')}
@@ -310,16 +312,16 @@ function Ready({ draft, assigned, onOpen, onRestart }: { draft: Draft; assigned:
       <View style={{ flex: 1, justifyContent: 'center' }}>
         <Text style={s.readyLogo}>xypa</Text>
         <Text style={s.readyTitle} accessibilityRole="header">Your plan is ready</Text>
-        <View style={s.dark}><Text style={s.darkL}>Safe to spend today</Text><Text style={s.darkBig}>{formatMoney(safe)}</Text><Text style={s.darkL}>Everyday envelopes ÷ {days} days left</Text></View>
+        <View style={s.dark}><Text style={s.darkL}>Safe to spend today</Text><Text style={s.darkBig}>{formatMoney(safe)}</Text><Text style={s.darkL}>{tr('Everyday envelopes ÷ {0} days left', days)}</Text></View>
         <View style={s.two}>
           <View style={s.glass}><Text style={s.rowN}>Envelopes</Text><Text style={s.cardMid}>{envCount}</Text></View>
           <View style={s.glass}><Text style={s.rowN}>Assigned</Text><Text style={s.cardMid}>{formatMoney(assignedTotal(assigned))}</Text></View>
         </View>
-        {regularCount ? <View style={s.glassWide}><Text style={s.noteText}>We'll remind you a day before your {regularCount} regular payments go out.</Text></View> : null}
+        {regularCount ? <View style={s.glassWide}><Text style={s.noteText}>{tr('We\'ll remind you a day before your {0} regular payments go out.', regularCount)}</Text></View> : null}
         <View style={s.glassWide}><Text style={s.noteText}>If an envelope runs over, move money from another one. Whatever you don't spend rolls into next month.</Text></View>
       </View>
       <BigButton title="Open my plan" onPress={onOpen} />
-      <Pressable accessibilityRole="button" accessibilityLabel="Start onboarding again" onPress={onRestart} style={s.link}><Text style={s.linkText}>Start onboarding again</Text></Pressable>
+      <Pressable accessibilityRole="button" accessibilityLabel={tr('Start onboarding again')} onPress={onRestart} style={s.link}><Text style={s.linkText}>Start onboarding again</Text></Pressable>
     </Poster>
   );
 }

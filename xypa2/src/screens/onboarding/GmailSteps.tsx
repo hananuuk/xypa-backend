@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { tr } from '../../i18n';
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '../../design/Text';
 import { scanGmail } from '../../api/client';
 import { colors, font } from '../../design/tokens';
 import { formatMoney } from '../../logic/money';
@@ -26,8 +28,8 @@ export function Reading({ onDone, onFail }: { onDone: (found: Found[]) => void; 
         if (cancelled) return;
         const d = draftFromScan(found);
         const texts = [
-          `${d.accounts.length} ${d.accounts.length === 1 ? 'account' : 'accounts'} · ${d.regular.length} regular ${d.regular.length === 1 ? 'payment' : 'payments'}${d.regular.some((r) => r.kind === 'Loan') ? ', including a loan' : ''}`,
-          `${found.filter((f) => f.type === 'spend').length} card payments`,
+          tr(d.regular.some((r) => r.kind === 'Loan') ? '{0} accounts · {1} regular payments, including a loan' : '{0} accounts · {1} regular payments', d.accounts.length, d.regular.length),
+          tr('{0} card payments', found.filter((f) => f.type === 'spend').length),
           'Skipped everything that isn’t from a bank',
         ];
         for (let i = 0; i < texts.length; i += 1) {
@@ -52,14 +54,14 @@ export function Reading({ onDone, onFail }: { onDone: (found: Found[]) => void; 
         <Text style={s.sub}>The last 3 months. Only emails from banks.</Text>
         {error ? (
           <View style={{ marginTop: 28, gap: 12 }}>
-            <View style={s.err}><Text style={s.errT}>We couldn't read your emails: {error}</Text></View>
+            <View style={s.err}><Text style={s.errT}>{tr('We couldn\'t read your emails: {0}', error)}</Text></View>
             <BigButton title="Try again" onPress={() => setAttempt((a) => a + 1)} />
-            <Pressable accessibilityRole="button" accessibilityLabel="I'll set things up myself" onPress={onFail} style={s.link}><Text style={s.linkT}>I'll set things up myself</Text></Pressable>
+            <Pressable accessibilityRole="button" accessibilityLabel={tr('I\'ll set things up myself')} onPress={onFail} style={s.link}><Text style={s.linkT}>I'll set things up myself</Text></Pressable>
           </View>
         ) : (
           <View style={{ marginTop: 28, gap: 12 }} accessibilityLiveRegion="polite">
             {lines.length === 0 ? (
-              <View style={s.row}><ActivityIndicator color={ob.ink} /><Text style={s.line}>{progress.total ? `Read ${progress.read} of ${progress.total}` : 'Looking for bank emails…'}</Text></View>
+              <View style={s.row}><ActivityIndicator color={ob.ink} /><Text style={s.line}>{progress.total ? tr('Read {0} of {1}', progress.read, progress.total) : 'Looking for bank emails…'}</Text></View>
             ) : lines.map((l) => (
               <View key={l.text} style={s.row}><View style={s.tick}><Text style={s.tickT}>✓</Text></View><Text style={s.line}>{l.text}</Text></View>
             ))}
@@ -80,7 +82,7 @@ export function NoEmails({ onBack, onStatement, onAlerts, onManual, onOtherAccou
   );
   return (
     <StepFrame step={1} title="We didn't find any bank emails" subtitle="That's okay. Pick what works for you." onBack={onBack}
-      footer={<Pressable accessibilityRole="button" accessibilityLabel="Try another account" onPress={onOtherAccount} style={s.link}><Text style={s.linkT}>Try another account</Text></Pressable>}>
+      footer={<Pressable accessibilityRole="button" accessibilityLabel={tr('Try another account')} onPress={onOtherAccount} style={s.link}><Text style={s.linkT}>Try another account</Text></Pressable>}>
       <View style={{ gap: 10, marginTop: 6 }}>
         {opt('Upload a statement', 'Your last 3 months from your bank app, as PDF, Excel or CSV.', onStatement, true)}
         {opt('Turn on email alerts', 'Ask your bank to email you about new payments.', onAlerts)}
@@ -93,7 +95,7 @@ export function NoEmails({ onBack, onStatement, onAlerts, onManual, onOtherAccou
 export function EmailAlerts({ onBack, onStatement, onManual }: { onBack: () => void; onStatement: () => void; onManual: () => void }) {
   return (
     <StepFrame step={1} title="Turn on email alerts" subtitle="Ask your bank to send payment notifications to the same Gmail address you signed in with." onBack={onBack}
-      footer={<><BigButton title="Upload a statement as well" onPress={onStatement} /><Pressable accessibilityRole="button" accessibilityLabel="I'll add things myself" onPress={onManual} style={s.link}><Text style={s.linkT}>I'll add things myself</Text></Pressable></>}>
+      footer={<><BigButton title="Upload a statement as well" onPress={onStatement} /><Pressable accessibilityRole="button" accessibilityLabel={tr('I\'ll add things myself')} onPress={onManual} style={s.link}><Text style={s.linkT}>I'll add things myself</Text></Pressable></>}>
       <View style={s.card}>
         {['Open your bank app and find the notification or alert settings.', 'Turn on email notifications for card payments and transfers.', 'Use the same Gmail address you signed in to xypa with.'].map((t, i) => (
           <View key={t} style={s.step}><View style={s.num}><Text style={s.numT}>{i + 1}</Text></View><Text style={s.stepT}>{t}</Text></View>

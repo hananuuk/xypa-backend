@@ -1,5 +1,7 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { tr } from '../i18n';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text } from './Text';
 import { Money } from './Amounts';
 import { InnerCard } from './Primitives';
 import { colors, font } from './tokens';
@@ -25,7 +27,7 @@ export function TxnsByDay({ txns, showAccount }: { txns: Txn[]; showAccount?: bo
             const cat = categoryLabel(t, env(t.envelopeId)?.name);
             const sub = showAccount ? `${cat} · ${acct(t.accountId) ?? ''}` : cat;
             return (
-              <Pressable key={t.id} accessibilityRole="button" accessibilityLabel={`${t.merchant}, ${formatMoney(t.type === 'spend' ? -t.amount : t.amount)}, ${cat}. Details`} onPress={() => nav.openSheet({ name: 'txn', id: t.id })}>
+              <Pressable key={t.id} accessibilityRole="button" accessibilityLabel={tr('{0}, {1}, {2}. Details', t.merchant, formatMoney(t.type === 'spend' ? -t.amount : t.amount), cat)} onPress={() => nav.openSheet({ name: 'txn', id: t.id })}>
                 <InnerCard style={s.row}>
                   <View style={{ flex: 1 }}>
                     <Text style={s.name} numberOfLines={1}>{t.merchant}</Text>

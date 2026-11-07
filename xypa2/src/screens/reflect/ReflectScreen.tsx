@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { tr } from '../../i18n';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '../../design/Text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Money } from '../../design/Amounts';
 import { Segmented } from '../../design/Fields';
@@ -8,7 +10,7 @@ import { colors, font } from '../../design/tokens';
 import { spentByDay, viewEnvelopes } from '../../logic/budget';
 import { Icon } from '../../design/Icon';
 import { formatMoney } from '../../logic/money';
-import { monthName } from '../../store/calendar';
+import { monthName, monthShort } from '../../store/calendar';
 import { useStore } from '../../store/store';
 import { useNav } from '../../nav';
 import { Button } from '../../design/Primitives';
@@ -33,16 +35,16 @@ export function ReflectScreen() {
   const nav = useNav();
   const picker = (
     <View style={s.picker}>
-      <Pressable accessibilityRole="button" accessibilityLabel="Previous month" disabled={!canPrev} hitSlop={10} onPress={() => setMonth(shift(month, -1))} style={[s.arrow, !canPrev && { opacity: 0.25 }]}><Icon name="chevronLeft" size={18} color={colors.ink} /></Pressable>
+      <Pressable accessibilityRole="button" accessibilityLabel={tr('Previous month')} disabled={!canPrev} hitSlop={10} onPress={() => setMonth(shift(month, -1))} style={[s.arrow, !canPrev && { opacity: 0.25 }]}><Icon name="chevronLeft" size={18} color={colors.ink} /></Pressable>
       <Text style={s.label} accessibilityLiveRegion="polite">{label}</Text>
-      <Pressable accessibilityRole="button" accessibilityLabel="Next month" disabled={!canNext} hitSlop={10} onPress={() => setMonth(shift(month, 1))} style={[s.arrow, !canNext && { opacity: 0.25 }]}><Icon name="chevronRight" size={18} color={colors.ink} /></Pressable>
+      <Pressable accessibilityRole="button" accessibilityLabel={tr('Next month')} disabled={!canNext} hitSlop={10} onPress={() => setMonth(shift(month, 1))} style={[s.arrow, !canNext && { opacity: 0.25 }]}><Icon name="chevronRight" size={18} color={colors.ink} /></Pressable>
     </View>
   );
   return (
     <ScrollView style={s.fill} contentContainerStyle={[s.content, { paddingTop: insets.top + 8, paddingBottom: 130 }]} showsVerticalScrollIndicator={false}>
       <PillBar left={<Text style={s.title} accessibilityRole="header">Reflect</Text>} right={picker} />
       <Block><Segmented value={tab} onChange={setTab} options={[{ value: 'breakdown', label: 'Breakdown' }, { value: 'calendar', label: 'Calendar' }, { value: 'report', label: 'Report' }]} /></Block>
-      {ASK_ENABLED && st.pro !== false ? <Block><Button title="Ask xypa" variant="chip" onPress={() => nav.push({ name: 'ask' })} accessibilityLabel="Ask xypa about your spending" /></Block> : null}
+      {ASK_ENABLED && st.pro !== false ? <Block><Button title="Ask xypa" variant="chip" onPress={() => nav.push({ name: 'ask' })} accessibilityLabel={tr('Ask xypa about your spending')} /></Block> : null}
       {tab === 'breakdown' ? <Breakdown month={month} /> : tab === 'calendar' ? <CalendarView month={month} /> : <Report month={month} />}
     </ScrollView>
   );
@@ -62,11 +64,11 @@ function Breakdown({ month }: { month: string }) {
   const merchants = Object.entries(byM).map(([name, v]) => ({ name, ...v })).sort((a, b) => b.total - a.total).slice(0, 5);
   return (
     <Block>
-      <Text style={s.label}>{month === st.today.month ? 'Spent this month' : `Spent in ${monthName(month)}`}</Text>
+      <Text style={s.label}>{month === st.today.month ? 'Spent this month' : tr('Spent in {0}', monthName(month))}</Text>
       <Money value={total} style={s.hero} />
       <View style={{ gap: 14, marginTop: 14 }}>
         {rows.length === 0 ? <Text style={s.label}>Nothing spent.</Text> : rows.map((e) => (
-          <Pressable key={e.id} accessibilityRole="button" accessibilityLabel={`${e.name}, ${formatMoney(e.spent)}. See transactions`} onPress={() => nav.push({ name: 'txnList', title: e.name, month, envelopeId: e.id })}>
+          <Pressable key={e.id} accessibilityRole="button" accessibilityLabel={tr('{0}, {1}. See transactions', e.name, formatMoney(e.spent))} onPress={() => nav.push({ name: 'txnList', title: e.name, month, envelopeId: e.id })}>
             <View style={s.row}><View style={s.nameRow}><View style={[s.dot, { backgroundColor: e.color }]} /><Text style={s.name}>{e.name}</Text></View><Money value={e.spent} style={s.amt} /></View>
             <View style={s.track}><View style={[s.bar, { width: `${(e.spent / max) * 100}%`, backgroundColor: e.color }]} /></View>
           </Pressable>
@@ -76,7 +78,7 @@ function Breakdown({ month }: { month: string }) {
         <View style={{ marginTop: 22, gap: 12 }}>
           <Text style={s.label}>Top merchants</Text>
           {merchants.map((m, i) => (
-            <Pressable key={m.name} style={s.row} accessibilityRole="button" onPress={() => nav.push({ name: 'txnList', title: m.name, month, merchant: m.name })} accessibilityLabel={`${i + 1}. ${m.name}, ${formatMoney(m.total)}, ${m.count} ${m.count === 1 ? 'time' : 'times'}. See transactions`}>
+            <Pressable key={m.name} style={s.row} accessibilityRole="button" onPress={() => nav.push({ name: 'txnList', title: m.name, month, merchant: m.name })} accessibilityLabel={tr('{0}. {1}, {2}, {3} times. See transactions', i + 1, m.name, formatMoney(m.total), m.count)}>
               <View style={{ flex: 1 }}><Text style={s.name} numberOfLines={1}>{i + 1}. {m.name}</Text><Text style={s.label}>{m.count} {m.count === 1 ? 'purchase' : 'purchases'}</Text></View>
               <Money value={m.total} style={s.amt} />
             </Pressable>
@@ -87,7 +89,7 @@ function Breakdown({ month }: { month: string }) {
         <View style={{ marginTop: 22, gap: 12 }}>
           <Text style={s.label}>Sent to people (not purchases)</Text>
           {people.map((m) => (
-            <Pressable key={m.name} style={s.row} accessibilityRole="button" onPress={() => nav.push({ name: 'txnList', title: m.name, month, merchant: m.name })} accessibilityLabel={`${m.name}, ${formatMoney(m.total)}, ${m.count} ${m.count === 1 ? 'time' : 'times'}. See transactions`}>
+            <Pressable key={m.name} style={s.row} accessibilityRole="button" onPress={() => nav.push({ name: 'txnList', title: m.name, month, merchant: m.name })} accessibilityLabel={tr('{0}, {1}, {2} times. See transactions', m.name, formatMoney(m.total), m.count)}>
               <View style={{ flex: 1 }}><Text style={s.name} numberOfLines={1}>{m.name}</Text><Text style={s.label}>{m.count} {m.count === 1 ? 'transfer' : 'transfers'}</Text></View>
               <Money value={m.total} style={s.amt} />
             </Pressable>
@@ -120,7 +122,7 @@ function CalendarView({ month }: { month: string }) {
           const isToday = current && d === st.today.day;
           return (
             <Pressable key={i} style={s.cell} disabled={future || !current} accessibilityRole="button"
-              accessibilityLabel={`Day ${d}, ${future ? 'upcoming' : spent === 0 ? 'nothing spent' : `${formatMoney(spent)} spent, ${over ? 'over' : 'within'} budget`}`}
+              accessibilityLabel={future ? tr('Day {0}, upcoming', d) : spent === 0 ? tr('Day {0}, nothing spent', d) : tr(over ? 'Day {0}, {1} spent, over budget' : 'Day {0}, {1} spent, within budget', d, formatMoney(spent))}
               onPress={() => nav.openSheet({ name: 'day', day: d })}>
               <View style={[s.day, isToday && s.today, !future && !over && spent > 0 && s.within, over && s.over]}>
                 <Text style={[s.dayText, (over || isToday) && { color: colors.white }, future && { color: colors.line2 }]}>{d}</Text>
@@ -153,11 +155,11 @@ function Report({ month }: { month: string }) {
       <Money value={avg} style={s.hero} />
       <View style={s.chart}>
         {months.map((m, i) => (
-          <View key={m} style={s.col} accessible accessibilityLabel={`${monthName(m)}, ${formatMoney(vals[i])} spent`}>
+          <View key={m} style={s.col} accessible accessibilityLabel={tr('{0}, {1} spent', monthName(m), formatMoney(vals[i]))}>
             <View style={{ height: 90, justifyContent: 'flex-end' }}>
               <View style={{ width: 34, height: Math.max(4, (vals[i] / max) * 90), borderRadius: 8, backgroundColor: i === 4 ? colors.accent : colors.gaugeTrack }} />
             </View>
-            <Text style={s.label}>{monthName(m).slice(0, 3)}</Text>
+            <Text style={s.label}>{monthShort(m)}</Text>
           </View>
         ))}
       </View>

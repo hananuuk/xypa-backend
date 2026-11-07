@@ -1,5 +1,7 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { tr } from '../../i18n';
+import { StyleSheet, View } from 'react-native';
+import { Text } from '../../design/Text';
 import { Money } from '../../design/Amounts';
 import { ScreenFrame } from '../../design/ScreenFrame';
 import { Block, Button, InnerCard, SectionLabel } from '../../design/Primitives';
@@ -26,7 +28,7 @@ export function EnvelopeDetail({ id }: { id: string }) {
       <Block>
         <Text style={s.label}>Left this month</Text>
         <Money value={e.left} style={[s.hero, overspent && { color: colors.accent }]} />
-        <View style={s.track} accessibilityLabel={`${Math.round(fraction * 100)}% left`}>
+        <View style={s.track} accessibilityLabel={tr('{0}% left', Math.round(fraction * 100))}>
           <View style={[s.fill, { width: `${(overspent ? 1 : fraction) * 100}%`, backgroundColor: overspent ? colors.accent : colors.gaugeFill }]} />
         </View>
         <Text style={s.sub}>

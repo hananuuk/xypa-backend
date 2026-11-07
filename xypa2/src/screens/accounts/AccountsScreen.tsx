@@ -1,5 +1,7 @@
 import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { tr } from '../../i18n';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '../../design/Text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Money, useAmountsHidden } from '../../design/Amounts';
 import { Icon } from '../../design/Icon';
@@ -33,13 +35,13 @@ export function AccountsScreen() {
       </Block>
       <Block padding={false} style={{ padding: 6, gap: 5 }}>
         {st.accounts.map((a) => (
-          <Pressable key={a.id} accessibilityRole="button" accessibilityLabel={`${a.name}, ${formatMoney(a.balance, { hidden })}${a.syncOk ? '' : ', not syncing, tap to fix'}`} onPress={() => nav.push({ name: 'account', id: a.id })}>
+          <Pressable key={a.id} accessibilityRole="button" accessibilityLabel={tr(a.syncOk ? '{0}, {1}' : '{0}, {1}, not syncing, tap to fix', a.name, formatMoney(a.balance, { hidden }))} onPress={() => nav.push({ name: 'account', id: a.id })}>
             <InnerCard style={s.acc}>
               <BankAvatar name={a.name} />
               <View style={{ flex: 1 }}>
                 <Text style={s.name}>{a.name}</Text>
-                {a.kind === 'Wallet' ? <Text style={s.label}>Wallet</Text> : a.syncOk ? <Text style={s.label}>Synced {a.lastSync?.toLowerCase()}</Text>
-                  : <Pressable accessibilityRole="button" accessibilityLabel={`Fix sync for ${a.name}`} onPress={() => nav.openSheet({ name: 'fixSync', id: a.id })} hitSlop={8}><Text style={s.fix}>Not syncing · tap to fix</Text></Pressable>}
+                {a.kind === 'Wallet' ? <Text style={s.label}>Wallet</Text> : a.syncOk ? <Text style={s.label}>{tr('Synced {0}', tr(a.lastSync ?? '').toLowerCase())}</Text>
+                  : <Pressable accessibilityRole="button" accessibilityLabel={tr('Fix sync for {0}', a.name)} onPress={() => nav.openSheet({ name: 'fixSync', id: a.id })} hitSlop={8}><Text style={s.fix}>Not syncing · tap to fix</Text></Pressable>}
               </View>
               <Money value={a.balance} style={s.amt} />
             </InnerCard>
@@ -62,10 +64,10 @@ export function AccountDetail({ id }: { id: string }) {
       <Block>
         <Text style={s.label}>Balance</Text>
         <Money value={a.balance} style={s.hero} />
-        <Text style={s.label}>{a.lastSync ? `Last sync: ${a.lastSync}` : 'Added by hand'}</Text>
+        <Text style={s.label}>{a.lastSync ? tr('Last sync: {0}', tr(a.lastSync)) : 'Added by hand'}</Text>
       </Block>
       <Block>
-        <Text style={s.name}>Does this match your {a.name} app?</Text>
+        <Text style={s.name}>{tr('Does this match your {0} app?', a.name)}</Text>
         <View style={s.btns}>
           <Button title="Yes, it matches" onPress={() => st.fixBalance(id, a.balance)} />
           <Button title="Fix balance" variant="chip" onPress={() => nav.openSheet({ name: 'fixSync', id })} />
