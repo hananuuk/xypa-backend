@@ -75,6 +75,20 @@ const CATEGORIES: { name: string; words: string[] }[] = [
   { name: 'Dining Out', words: ['pizza', 'restaurant', 'hotpot', 'grill', 'bbq', 'bar', 'kfc', 'burger', 'ресторан'] },
   { name: 'Shopping', words: ['mall', 'zara', 'h&m', 'uniqlo', 'store', 'fashion', 'cloth'] },
 ];
+/** Only names that can't be anything else. Used to file a payment without asking; everything else is left for the person. */
+const SURE: { name: string; words: string[] }[] = [
+  { name: 'Coffee', words: ['coffee', 'cafe', 'café', 'кофе', 'starbucks', 'tom n toms'] },
+  { name: 'Groceries', words: ['supermarket', 'grocery', 'emart', 'e-mart'] },
+  { name: 'Transport', words: ['taxi', 'uber', 'такси', 'fuel', 'petrol', 'шатахуун', 'parking'] },
+  { name: 'Dining Out', words: ['pizza', 'restaurant', 'ресторан', 'hotpot', 'kfc', 'burger', 'bbq'] },
+];
+const hasWord = (text: string, w: string) => new RegExp(`(^|[^\\p{L}])${w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}($|[^\\p{L}])`, 'u').test(text);
+/** The category when the merchant name leaves no doubt, otherwise null. Whole words only: "tea" would otherwise match "steak". */
+export function sureCategoryOf(merchant: string): string | null {
+  const m = merchant.toLowerCase();
+  return SURE.find((c) => c.words.some((w) => hasWord(m, w)))?.name ?? null;
+}
+
 export function categoryOf(merchant: string): string {
   const m = merchant.toLowerCase();
   if (m === 'transfer') return 'Transfers';
@@ -121,7 +135,8 @@ export function txnsFromScan(found: Found[], envelopes: Envelope[], accounts: Ac
     let envelopeId: string | null = null;
     if (f.type === 'spend' && !f.transfer) {
       const reg = `reg-${normalizeMerchant(f.merchant).toLowerCase().replace(/ /g, '-')}`;
-      envelopeId = byId.has(reg) ? reg : byName.get(categoryOf(f.merchant).toLowerCase()) ?? null;
+      const sure = sureCategoryOf(f.merchant);
+      envelopeId = byId.has(reg) ? reg : sure ? byName.get(sure.toLowerCase()) ?? null : null;
     }
     return [{ id: f.gmailId ? `g-${f.gmailId}` : `s-${i}-${date}-${f.amount}`, envelopeId, merchant: f.merchant, amount: f.amount, type: f.type, date, accountId: bankId(f.bank, f.account), source: f.source ?? 'gmail', ...(f.transfer ? { kind: f.transfer } : {}) }];
   });

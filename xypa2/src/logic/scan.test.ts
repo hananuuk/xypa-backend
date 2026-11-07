@@ -50,3 +50,16 @@ describe('scan', () => {
     expect(t.every((x) => plan.accounts.some((a) => a.id === x.accountId))).toBe(true);
   });
 });
+
+describe('sureCategoryOf', () => {
+  it('files only names that leave no doubt', async () => {
+    const { sureCategoryOf } = await import('./scan');
+    expect(sureCategoryOf('COFFEE NAMU CENTRAL')).toBe('Coffee');
+    expect(sureCategoryOf('Tom N Toms 28')).toBe('Coffee');
+    expect(sureCategoryOf('Улаанбаатар такси')).toBe('Transport');
+    expect(sureCategoryOf('STEAK HOUSE')).toBeNull();
+    expect(sureCategoryOf('BARBER SHOP')).toBeNull();
+    expect(sureCategoryOf('CENTRAL TOWER')).toBeNull();
+    expect(sureCategoryOf('Ruby room burger')).toBe('Dining Out');
+  });
+});
