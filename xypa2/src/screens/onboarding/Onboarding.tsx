@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { tr } from '../../i18n';
 import { BankAvatar } from '../../design/BankAvatar';
 import { BANKS, bankFor } from '../../data/banks';
@@ -16,11 +16,12 @@ import {
 import { monthlySaving } from '../../logic/budget';
 import { draftFromScan, Found, txnsFromScan } from '../../logic/scan';
 import { useStore } from '../../store/store';
+import { SpendFlowStep } from './SpendFlowStep';
 import { StatementStep } from './StatementStep';
 import { EmailAlerts, NoEmails, Reading } from './GmailSteps';
 import { AmountInput, BigButton, CostFooter, DashedAdd, ob, Poster, SectionHead, StepFrame, Switch } from './ui';
 
-type Step = 'hello' | 'intro' | 'reading' | 'noEmails' | 'alerts' | 'statement' | 'accounts' | 'regular' | 'usual' | 'yearly' | 'assign' | 'ready';
+type Step = 'hello' | 'flow' | 'intro' | 'reading' | 'noEmails' | 'alerts' | 'statement' | 'accounts' | 'regular' | 'usual' | 'yearly' | 'assign' | 'ready';
 const ORDER: Step[] = ['intro', 'accounts', 'regular', 'usual', 'yearly', 'assign'];
 const uid = () => Math.random().toString(36).slice(2, 8);
 
@@ -32,6 +33,7 @@ export function Onboarding() {
   const [found, setFound] = useState<Found[]>([]);
   const [authMsg, setAuthMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const monthlySpend = useRef(0);
   const [statementBack, setStatementBack] = useState<Step>('noEmails');
   const set = (p: Partial<Draft>) => setDraft((d) => ({ ...d, ...p }));
   const n = ORDER.indexOf(step as Step) + 1;
@@ -42,7 +44,7 @@ export function Onboarding() {
     setBusy(true); setAuthMsg(null);
     const r = await authenticate('signin');
     setBusy(false);
-    if (r.ok) { st.setSession(r.me); setStep('intro'); } else if (r.reason !== 'cancelled') setAuthMsg(r.message ? tr('Sign-in didn\'t work: {0}. Try again.', r.message) : tr('Sign-in didn\'t work. Try again.'));
+    if (r.ok) { st.setSession(r.me); setStep('flow'); } else if (r.reason !== 'cancelled') setAuthMsg(r.message ? tr('Sign-in didn\'t work: {0}. Try again.', r.message) : tr('Sign-in didn\'t work. Try again.'));
   };
   const allowGmail = async () => {
     setBusy(true); setAuthMsg(null);
@@ -61,12 +63,13 @@ export function Onboarding() {
   };
 
   if (step === 'hello') return <Hello onStart={signIn} busy={busy} message={authMsg} />;
+  if (step === 'flow') return <SpendFlowStep onBack={() => setStep('hello')} onNext={(v) => { monthlySpend.current = v; setStep('intro'); }} />;
   if (step === 'reading') return <Reading onDone={useFound} onFail={() => setStep('accounts')} />;
   if (step === 'noEmails') return <NoEmails onBack={() => setStep('intro')} onStatement={() => { setStatementBack('noEmails'); setStep('statement'); }} onAlerts={() => setStep('alerts')} onManual={() => setStep('accounts')} onOtherAccount={otherAccount} />;
   if (step === 'statement') return <StatementStep onBack={() => setStep(statementBack)} onRead={useFound} />;
   if (step === 'alerts') return <EmailAlerts onBack={() => setStep('noEmails')} onStatement={() => setStep('statement')} onManual={() => setStep('accounts')} />;
   if (step === 'ready') return <Ready draft={draft} assigned={assigned} onOpen={() => { const plan = buildPlan(draft, assigned); st.completeOnboarding({ ...plan, txns: txnsFromScan(found, plan.envelopes, plan.accounts, st.today.month) }); }} onRestart={() => { setDraft(emptyDraft()); setAssigned({}); setFound([]); setStep('hello'); }} />;
-  if (step === 'intro') return <Intro onBack={() => setStep('hello')} onManual={() => { setFound([]); setStep('accounts'); }} onStatement={() => { setStatementBack('intro'); setStep('statement'); }} onAllow={allowGmail} busy={busy} message={authMsg} />;
+  if (step === 'intro') return <Intro onBack={() => setStep('flow')} onManual={() => { setFound([]); setStep('accounts'); }} onStatement={() => { setStatementBack('intro'); setStep('statement'); }} onAllow={allowGmail} busy={busy} message={authMsg} />;
   if (step === 'accounts') return <Accounts n={n} draft={draft} set={set} onBack={back} onNext={next} />;
   if (step === 'regular') return <Regular n={n} draft={draft} set={set} onBack={back} onNext={next} />;
   if (step === 'usual') return <Usual n={n} draft={draft} set={set} onBack={back} onNext={next} />;
@@ -88,6 +91,7 @@ function Hello({ onStart, busy, message }: { onStart: () => void; busy: boolean;
         <Text style={s.googleText}>Continue with Google</Text>
       </Pressable>
       {message ? <Text style={s.login} accessibilityLiveRegion="polite">{message}</Text> : null}
+      <Pressable accessibilityRole="button" accessibilityLabel={tr('Log in')} accessibilityState={{ disabled: busy }} disabled={busy} onPress={onStart} style={s.link}><Text style={s.loginLink}>Log in</Text></Pressable>
     </Poster>
   );
 }
@@ -338,6 +342,7 @@ const s = StyleSheet.create({
   login: { fontFamily: font.regular, fontSize: 14, color: colors.ink2, textAlign: 'center', marginTop: 14, lineHeight: 20 },
   soon: { fontFamily: font.regular, fontSize: 13, color: colors.muted, textAlign: 'center' },
   link: { minHeight: 48, alignItems: 'center', justifyContent: 'center' },
+  loginLink: { fontFamily: font.medium, fontSize: 16, color: ob.ink, textDecorationLine: 'underline' },
   linkText: { fontFamily: font.medium, fontSize: 16, color: ob.ink },
   li: { fontFamily: font.regular, fontSize: 17, color: ob.ink, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.line },
   row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.line },
