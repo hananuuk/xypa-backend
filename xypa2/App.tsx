@@ -28,6 +28,7 @@ import { ConfirmLogOutSheet, CurrencySheet, EditNameSheet, GmailSheet, LanguageS
 import { TxnListScreen } from './src/screens/reflect/TxnListScreen';
 import { AskScreen } from './src/screens/ask/AskScreen';
 import { ImportStatementScreen } from './src/screens/import/ImportStatementScreen';
+import { TxnSheet } from './src/sheets/TxnSheet';
 import { StoreProvider, useStore } from './src/store/store';
 
 function Shell() {
@@ -90,6 +91,7 @@ function Shell() {
       case 'newGoal': return <NewGoalSheet onClose={close} />;
       case 'addGoalMoney': return <AddGoalMoneySheet id={s.id} onClose={close} />;
       case 'addAccount': return <AddAccountSheet onClose={close} />;
+      case 'txn': return <TxnSheet id={s.id} onClose={close} />;
       case 'day': return <DaySheet day={s.day} onClose={close} />;
       case 'fixSync': return <FixSyncSheet id={s.id} onClose={close} />;
       case 'currency': return <CurrencySheet onClose={close} />;

@@ -7,6 +7,7 @@ import { ScreenFrame } from '../../design/ScreenFrame';
 import { Block, Button, IconButton, InnerCard, PillBar, SectionLabel } from '../../design/Primitives';
 import { colors, font } from '../../design/tokens';
 import { formatMoney } from '../../logic/money';
+import { TxnsByDay } from '../../design/TxnRows';
 import { useStore } from '../../store/store';
 import { useNav } from '../../nav';
 
@@ -72,14 +73,7 @@ export function AccountDetail({ id }: { id: string }) {
       </Block>
       <Block>
         <SectionLabel title="Transactions" />
-        <View style={{ gap: 5 }}>
-          {txns.length === 0 ? <Text style={s.label}>No transactions yet.</Text> : txns.map((t) => (
-            <InnerCard key={t.id} style={s.acc}>
-              <View style={{ flex: 1 }}><Text style={s.name} numberOfLines={1}>{t.merchant}</Text><Text style={s.label}>{t.date.slice(5).replace('-', '/')}</Text></View>
-              <Money value={t.type === 'spend' ? -t.amount : t.amount} style={s.amt} />
-            </InnerCard>
-          ))}
-        </View>
+        <TxnsByDay txns={txns} />
       </Block>
     </ScreenFrame>
   );

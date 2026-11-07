@@ -26,6 +26,7 @@ export type Sheet =
   | { name: 'addGoalMoney'; id: string }
   | { name: 'addAccount' }
   | { name: 'day'; day: number }
+  | { name: 'txn'; id: string }
   | { name: 'fixSync'; id: string }
   | { name: 'confirmDeleteGoal'; id: string }
   | { name: 'currency' }

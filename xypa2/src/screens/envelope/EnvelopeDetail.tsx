@@ -3,6 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { Money } from '../../design/Amounts';
 import { ScreenFrame } from '../../design/ScreenFrame';
 import { Block, Button, InnerCard, SectionLabel } from '../../design/Primitives';
+import { TxnsByDay } from '../../design/TxnRows';
 import { Icon } from '../../design/Icon';
 import { colors, font } from '../../design/tokens';
 import { needs } from '../../logic/budget';
@@ -51,19 +52,7 @@ export function EnvelopeDetail({ id }: { id: string }) {
 
       <Block>
         <SectionLabel title="This month's transactions" />
-        {txns.length === 0 ? <Text style={s.sub}>Nothing yet this month.</Text> : (
-          <View style={{ gap: 5 }}>
-            {txns.map((x) => (
-              <InnerCard key={x.id} style={s.txn}>
-                <View style={{ flexShrink: 1 }}>
-                  <Text style={s.txnName} numberOfLines={1}>{x.merchant}</Text>
-                  <Text style={s.sub}>{x.date.slice(5).replace('-', '/')}</Text>
-                </View>
-                <Money value={x.type === 'spend' ? -x.amount : x.amount} style={s.txnAmt} />
-              </InnerCard>
-            ))}
-          </View>
-        )}
+        {txns.length === 0 ? <Text style={s.sub}>Nothing yet this month.</Text> : <TxnsByDay txns={txns} />}
       </Block>
     </ScreenFrame>
   );
