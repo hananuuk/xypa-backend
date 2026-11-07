@@ -177,7 +177,7 @@ export const mn: Record<string, string> = {
   "From your statement": "Таны хуулгаас",
   "Fully covered": "Бүрэн нөхөгдсөн",
   "Funded": "Санхүүжсэн",
-  "Give every tögrög a job.": "Төгрөг бүрт үүрэг өгөөрэй.",
+  "Give every tögrög a job.": "Дусал дуслаар хураа",
   "Give your money a job": "Мөнгөндөө үүрэг өг",
   "Gmail": "Gmail",
   "Gmail access didn't work. Try again, or set things up yourself.": "Gmail-д хандаж чадсангүй. Дахин оролдох эсвэл өөрөө тохируулна уу.",

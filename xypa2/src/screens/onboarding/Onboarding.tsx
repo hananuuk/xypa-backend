@@ -77,7 +77,7 @@ export function Onboarding() {
 /* ---------- Hello ---------- */
 function Hello({ onStart, busy, message }: { onStart: () => void; busy: boolean; message: string | null }) {
   return (
-    <Poster>
+    <Poster image={require('../../../assets/hello-bg.jpg')}>
       <View style={s.topRow}><Text style={s.logo}>xypa</Text><Text style={s.index}>--01</Text></View>
       <View style={s.fan}>
         <EnvCard style={{ left: 8, top: 62, transform: [{ rotate: '-7deg' }] }} label="Rent" value="1,200,000₮" />
