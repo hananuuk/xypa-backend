@@ -4,12 +4,14 @@
   "description": "Gmail receipt sync backend for the xypa spending tracker",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "node --test"
   },
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^4.19.2",
     "googleapis": "^140.0.0",
+    "pdf-parse": "^2.4.5",
     "pg": "^8.13.1"
   },
   "engines": {
