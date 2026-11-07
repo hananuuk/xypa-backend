@@ -6,6 +6,7 @@ import { Field } from '../design/Fields';
 import { Button, InnerCard } from '../design/Primitives';
 import { colors, font } from '../design/tokens';
 import { CURRENCIES, CurrencyCode } from '../logic/money';
+import { clearToken, disconnectGmail } from '../api/client';
 import { useStore } from '../store/store';
 
 function Option({ label, note, selected, disabled, onPress }: { label: string; note?: string; selected: boolean; disabled?: boolean; onPress: () => void }) {
@@ -62,8 +63,23 @@ export function ConfirmLogOutSheet({ onClose }: { onClose: () => void }) {
   return (
     <BottomSheet visible title="Log out?" onClose={onClose}>
       <Text style={s.body}>There's no cloud account yet, so your envelopes, payments and settings live only on this phone. Logging out erases them and takes you back to the start.</Text>
-      <Button full variant="accent" title="Log out and erase" style={{ marginTop: 18 }} onPress={() => { onClose(); st.logOut(); }} />
+      <Button full variant="accent" title="Log out and erase" style={{ marginTop: 18 }} onPress={async () => { onClose(); await clearToken(); st.logOut(); }} />
       <Button full variant="chip" title="Keep my data" style={{ marginTop: 8 }} onPress={onClose} />
+    </BottomSheet>
+  );
+}
+
+export function GmailSheet({ onClose }: { onClose: () => void }) {
+  const st = useStore();
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  return (
+    <BottomSheet visible title="Gmail" onClose={onClose}>
+      <Text style={s.body}>xypa reads your bank emails (read only) to find new payments. Disconnecting stops that and removes xypa's access. Your envelopes stay as they are.</Text>
+      {err ? <Text style={[s.note, { marginTop: 10 }]}>{err}</Text> : null}
+      <Button full variant="accent" title={busy ? 'Disconnecting…' : 'Disconnect Gmail'} disabled={busy} style={{ marginTop: 18 }}
+        onPress={async () => { setBusy(true); try { await disconnectGmail(); st.setSession({ email: st.profile?.email ?? '', name: st.profile?.name ?? null, gmailConnected: false }); onClose(); } catch (e) { setErr("Couldn't disconnect. Try again."); setBusy(false); } }} />
+      <Button full variant="chip" title="Keep connected" style={{ marginTop: 8 }} onPress={onClose} />
     </BottomSheet>
   );
 }

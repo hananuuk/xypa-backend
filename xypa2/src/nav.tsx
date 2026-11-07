@@ -28,7 +28,8 @@ export type Sheet =
   | { name: 'currency' }
   | { name: 'language' }
   | { name: 'editName' }
-  | { name: 'confirmLogOut' };
+  | { name: 'confirmLogOut' }
+  | { name: 'gmail' };
 
 export type Nav = {
   push: (r: Route) => void;

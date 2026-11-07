@@ -24,7 +24,7 @@ import { AddAccountSheet, DaySheet, FixSyncSheet } from './src/sheets/AccountShe
 import { CoverSheet } from './src/sheets/CoverSheet';
 import { AddGoalMoneySheet, ConfirmDeleteGoalSheet, NewGoalSheet } from './src/sheets/GoalSheets';
 import { MonthPickerSheet, MoveInSheet, NewEnvelopeSheet, SafeExplainSheet } from './src/sheets/SmallSheets';
-import { ConfirmLogOutSheet, CurrencySheet, EditNameSheet, LanguageSheet } from './src/sheets/SettingsSheets';
+import { ConfirmLogOutSheet, CurrencySheet, EditNameSheet, GmailSheet, LanguageSheet } from './src/sheets/SettingsSheets';
 import { StoreProvider, useStore } from './src/store/store';
 
 function Shell() {
@@ -89,6 +89,7 @@ function Shell() {
       case 'currency': return <CurrencySheet onClose={close} />;
       case 'language': return <LanguageSheet onClose={close} />;
       case 'editName': return <EditNameSheet onClose={close} />;
+      case 'gmail': return <GmailSheet onClose={close} />;
       case 'confirmLogOut': return <ConfirmLogOutSheet onClose={close} />;
       case 'confirmDeleteGoal': return <ConfirmDeleteGoalSheet id={s.id} onClose={close} onDeleted={() => { close(); back(); }} />;
     }

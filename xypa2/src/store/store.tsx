@@ -19,7 +19,7 @@ export type Persisted = {
   checklist: Checklist; envView: 'list' | 'grid';
   /** Missing (older saves) counts as onboarded; false means show onboarding. */
   onboarded?: boolean;
-  profile?: { name: string };
+  profile?: { name: string; email?: string; gmail?: boolean };
   currency?: CurrencyCode;
   language?: 'en' | 'mn';
   notify?: { overspend: boolean; newTxns: boolean; morning: boolean };
@@ -60,11 +60,12 @@ type Store = Persisted & {
   setHomeLayout: (order: HomeCard[], hidden: Partial<Record<HomeCard, boolean>>) => void;
   startOnboarding: () => void;
   setProfileName: (name: string) => void;
+  setSession: (me: { email: string; name: string | null; gmailConnected: boolean }) => void;
   setCurrencyCode: (c: CurrencyCode) => void;
   setLanguage: (l: 'en' | 'mn') => void;
   setNotify: (k: 'overspend' | 'newTxns' | 'morning', v: boolean) => void;
   logOut: () => void;
-  completeOnboarding: (plan: { accounts: Account[]; envelopes: Envelope[] }) => void;
+  completeOnboarding: (plan: { accounts: Account[]; envelopes: Envelope[]; txns?: Txn[] }) => void;
 };
 
 const Ctx = createContext<Store | null>(null);
@@ -146,14 +147,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     addGoal: (g) => change(`${g.name} added`, (s) => ({ ...s, goals: [...s.goals, { ...g, id: `goal-${Date.now()}`, saved: 0, addedThisMonth: 0 }] })),
     fixBalance: (accountId, balance) => change('Balance updated', (s) => ({ ...s, accounts: s.accounts.map((a) => (a.id === accountId ? { ...a, balance, syncOk: true } : a)) })),
     addAccount: (a) => change(`${a.name} added`, (s) => ({ ...s, accounts: [...s.accounts, { ...a, id: `acc-${Date.now()}`, syncOk: true }] })),
-    setProfileName: (name) => setState((s) => ({ ...s, profile: { name } })),
+    setProfileName: (name) => setState((s) => ({ ...s, profile: { ...s.profile, name } })),
+    setSession: (me) => setState((s) => ({ ...s, profile: { name: s.profile?.name || me.name || '', email: me.email, gmail: me.gmailConnected } })),
     setCurrencyCode: (c) => setState((s) => ({ ...s, currency: c })),
     setLanguage: (l) => setState((s) => ({ ...s, language: l })),
     setNotify: (k, v) => setState((s) => ({ ...s, notify: { overspend: true, newTxns: true, morning: false, ...s.notify, [k]: v } })),
-    logOut: () => { setToast(null); setState({ ...defaults(), onboarded: false }); },
+    logOut: () => { setToast(null); setState({ ...defaults(), onboarded: false, profile: undefined }); },
     startOnboarding: () => setState((s) => ({ ...s, onboarded: false })),
     completeOnboarding: (plan) => setState((s) => ({
-      ...s, accounts: plan.accounts, envelopes: plan.envelopes, txns: [], goals: [], rules: [],
+      ...s, accounts: plan.accounts, envelopes: plan.envelopes, txns: plan.txns ?? [], goals: [], rules: [],
       homeOrder: ['notes', 'rta', 'safe', 'envs'], homeHidden: {}, checklist: { sort: false, cover: false, check: false, assign: false }, onboarded: true,
     })),
     setHomeLayout: (order, hidden) => setState((s) => ({ ...s, homeOrder: order, homeHidden: hidden })),

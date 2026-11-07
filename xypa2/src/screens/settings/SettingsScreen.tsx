@@ -5,6 +5,7 @@ import { ScreenFrame } from '../../design/ScreenFrame';
 import { Block, InnerCard } from '../../design/Primitives';
 import { colors, font } from '../../design/tokens';
 import { CURRENCIES } from '../../logic/money';
+import { authenticate } from '../../api/client';
 import { useStore } from '../../store/store';
 import { useNav } from '../../nav';
 
@@ -38,16 +39,27 @@ export function SettingsScreen() {
   const n = { overspend: true, newTxns: true, morning: false, ...st.notify };
   const cur = CURRENCIES[st.currency ?? 'MNT'];
   const name = st.profile?.name?.trim();
+  const [msg, setMsg] = React.useState<string | null>(null);
+  const connect = async () => {
+    setMsg(null);
+    const r = await authenticate(st.profile?.email ? 'gmail' : 'signin');
+    if (r.ok) st.setSession(r.me); else if (r.reason !== 'cancelled') setMsg(r.reason === 'wrong_account' ? 'Please pick the same Google account you signed in with.' : "That didn't work. Try again.");
+  };
   return (
     <ScreenFrame title="Settings" onBack={nav.back}>
       <Block padding={false} style={s.block}>
         <Title t="PROFILE" />
         <Row label="Name" value={name || 'Add your name'} onPress={() => nav.openSheet({ name: 'editName' })} />
-        <InnerCard style={s.row}><Text style={s.label}>Email</Text><Text style={s.value}>Not signed in yet</Text></InnerCard>
+        <InnerCard style={s.row}><Text style={s.label}>Email</Text><Text style={s.value} numberOfLines={1}>{st.profile?.email ?? 'Not signed in'}</Text></InnerCard>
       </Block>
       <Block padding={false} style={s.block}>
         <Title t="CONNECTIONS" />
-        <InnerCard style={s.row}><Text style={s.label}>Gmail</Text><Text style={s.value}>Coming soon</Text></InnerCard>
+        {st.profile?.gmail ? (
+          <Row label="Gmail" value="Connected" onPress={() => nav.openSheet({ name: 'gmail' })} />
+        ) : (
+          <Row label="Gmail" value={st.profile?.email ? 'Connect' : 'Sign in with Google'} onPress={connect} />
+        )}
+        {msg ? <Text style={s.hint} accessibilityLiveRegion="polite">{msg}</Text> : null}
         <InnerCard style={s.row}><Text style={s.label}>Merchant rules</Text><Text style={s.value}>{st.rules.length} {st.rules.length === 1 ? 'rule' : 'rules'}</Text></InnerCard>
       </Block>
       <Block padding={false} style={s.block}>

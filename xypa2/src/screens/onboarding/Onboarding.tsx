@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { authenticate, me } from '../../api/client';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
@@ -9,10 +10,12 @@ import {
   assignedTotal, buildPlan, Draft, emptyDraft, fillWhatFits, monthCost, moneyToPlan, prefill, regularTotal, usualTotal, wants, yearlyMonthly,
 } from '../../logic/onboarding';
 import { monthlySaving } from '../../logic/budget';
+import { draftFromScan, Found, txnsFromScan } from '../../logic/scan';
 import { useStore } from '../../store/store';
+import { EmailAlerts, NoEmails, Reading } from './GmailSteps';
 import { AmountInput, BigButton, CostFooter, DashedAdd, ob, Poster, SectionHead, StepFrame, Switch } from './ui';
 
-type Step = 'hello' | 'intro' | 'accounts' | 'regular' | 'usual' | 'yearly' | 'assign' | 'ready';
+type Step = 'hello' | 'intro' | 'reading' | 'noEmails' | 'alerts' | 'statement' | 'accounts' | 'regular' | 'usual' | 'yearly' | 'assign' | 'ready';
 const ORDER: Step[] = ['intro', 'accounts', 'regular', 'usual', 'yearly', 'assign'];
 const uid = () => Math.random().toString(36).slice(2, 8);
 
@@ -21,14 +24,42 @@ export function Onboarding() {
   const [step, setStep] = useState<Step>('hello');
   const [draft, setDraft] = useState<Draft>(emptyDraft);
   const [assigned, setAssigned] = useState<Record<string, number>>({});
+  const [found, setFound] = useState<Found[]>([]);
+  const [authMsg, setAuthMsg] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
   const set = (p: Partial<Draft>) => setDraft((d) => ({ ...d, ...p }));
   const n = ORDER.indexOf(step as Step) + 1;
   const back = () => setStep(ORDER[Math.max(0, ORDER.indexOf(step) - 1)] ?? 'hello');
   const next = () => setStep(ORDER[ORDER.indexOf(step) + 1] ?? 'ready');
 
-  if (step === 'hello') return <Hello onStart={() => setStep('intro')} />;
-  if (step === 'ready') return <Ready draft={draft} assigned={assigned} onOpen={() => st.completeOnboarding(buildPlan(draft, assigned))} onRestart={() => { setDraft(emptyDraft()); setAssigned({}); setStep('hello'); }} />;
-  if (step === 'intro') return <Intro onBack={() => setStep('hello')} onManual={next} />;
+  const signIn = async () => {
+    setBusy(true); setAuthMsg(null);
+    const r = await authenticate('signin');
+    setBusy(false);
+    if (r.ok) { st.setSession(r.me); setStep('intro'); } else if (r.reason !== 'cancelled') setAuthMsg(`Sign-in didn't work${r.message ? `: ${r.message}` : ''}. Try again.`);
+  };
+  const allowGmail = async () => {
+    setBusy(true); setAuthMsg(null);
+    const r = await authenticate('gmail');
+    setBusy(false);
+    if (r.ok) { st.setSession(r.me); setStep('reading'); }
+    else if (r.reason === 'wrong_account') setAuthMsg('Please pick the same Google account you signed in with.');
+    else if (r.reason !== 'cancelled') setAuthMsg(`Gmail access didn't work${r.message ? `: ${r.message}` : ''}. Try again, or set things up yourself.`);
+  };
+  const otherAccount = async () => { const r = await authenticate('signin'); if (r.ok) { st.setSession(r.me); setStep('intro'); } };
+  const useFound = (f: Found[]) => {
+    setFound(f);
+    if (f.length === 0) { setStep('noEmails'); return; }
+    setDraft(draftFromScan(f));
+    setStep('accounts');
+  };
+
+  if (step === 'hello') return <Hello onStart={signIn} busy={busy} message={authMsg} />;
+  if (step === 'reading') return <Reading onDone={useFound} onFail={() => setStep('accounts')} />;
+  if (step === 'noEmails') return <NoEmails onBack={() => setStep('intro')} onStatement={() => setStep('statement')} onAlerts={() => setStep('alerts')} onManual={() => setStep('accounts')} onOtherAccount={otherAccount} />;
+  if (step === 'alerts') return <EmailAlerts onBack={() => setStep('noEmails')} onStatement={() => setStep('statement')} onManual={() => setStep('accounts')} />;
+  if (step === 'ready') return <Ready draft={draft} assigned={assigned} onOpen={() => { const plan = buildPlan(draft, assigned); st.completeOnboarding({ ...plan, txns: txnsFromScan(found, plan.envelopes, plan.accounts) }); }} onRestart={() => { setDraft(emptyDraft()); setAssigned({}); setFound([]); setStep('hello'); }} />;
+  if (step === 'intro') return <Intro onBack={() => setStep('hello')} onManual={() => { setFound([]); setStep('accounts'); }} onAllow={allowGmail} busy={busy} message={authMsg} />;
   if (step === 'accounts') return <Accounts n={n} draft={draft} set={set} onBack={back} onNext={next} />;
   if (step === 'regular') return <Regular n={n} draft={draft} set={set} onBack={back} onNext={next} />;
   if (step === 'usual') return <Usual n={n} draft={draft} set={set} onBack={back} onNext={next} />;
@@ -37,7 +68,7 @@ export function Onboarding() {
 }
 
 /* ---------- Hello ---------- */
-function Hello({ onStart }: { onStart: () => void }) {
+function Hello({ onStart, busy, message }: { onStart: () => void; busy: boolean; message: string | null }) {
   return (
     <Poster>
       <View style={s.topRow}><Text style={s.logo}>xypa</Text><Text style={s.index}>--01</Text></View>
@@ -50,11 +81,11 @@ function Hello({ onStart }: { onStart: () => void }) {
       <Text style={s.hello} accessibilityRole="header">Give every tögrög a job.</Text>
       <Text style={s.helloSub}>Plan the money you already have, one envelope at a time, and always know what's safe to spend.</Text>
       <View style={{ height: 28 }} />
-      <Pressable accessibilityRole="button" accessibilityLabel="Continue with Google" onPress={onStart} style={s.google}>
+      <Pressable accessibilityRole="button" accessibilityLabel="Continue with Google" accessibilityState={{ disabled: busy }} disabled={busy} onPress={onStart} style={[s.google, busy && { opacity: 0.6 }]}>
         <View style={s.g}><Text style={s.gText}>G</Text></View>
         <Text style={s.googleText}>Continue with Google</Text>
       </Pressable>
-      <Text style={s.login}>Google sign-in is coming soon. For now this sets up on your phone.</Text>
+      <Text style={s.login} accessibilityLiveRegion="polite">{message ?? 'Signing in only shares your name and email. Reading your bank emails is a separate step, and you choose.'}</Text>
     </Poster>
   );
 }
@@ -69,12 +100,12 @@ function EnvCard({ style, label, value, red }: { style: object; label: string; v
 }
 
 /* ---------- Step 1 ---------- */
-function Intro({ onBack, onManual }: { onBack: () => void; onManual: () => void }) {
+function Intro({ onBack, onManual, onAllow, busy, message }: { onBack: () => void; onManual: () => void; onAllow: () => void; busy: boolean; message: string | null }) {
   return (
     <StepFrame step={1} title="Let your bank emails do the typing" subtitle="xypa can read the payment emails your bank already sends and sort them for you." onBack={onBack}
       footer={<>
-        <BigButton title="Allow Gmail access" disabled onPress={() => {}} />
-        <Text style={s.soon}>Gmail is coming soon.</Text>
+        <BigButton title="Allow Gmail access" disabled={busy} onPress={onAllow} />
+        {message ? <Text style={s.soon} accessibilityLiveRegion="polite">{message}</Text> : <Text style={s.soon}>Read only. Bank senders only.</Text>}
         <Pressable accessibilityRole="button" accessibilityLabel="I'll set things up myself" onPress={onManual} style={s.link}><Text style={s.linkText}>I'll set things up myself</Text></Pressable>
       </>}>
       <SectionHead title="XYPA CAN" />
@@ -89,13 +120,15 @@ function Intro({ onBack, onManual }: { onBack: () => void; onManual: () => void 
 function Accounts({ n, draft, set, onBack, onNext }: P) {
   const [name, setName] = useState('');
   const total = moneyToPlan(draft);
+  const scanned = draft.accounts.some((a) => a.note);
   const add = () => { if (!name.trim()) return; set({ accounts: [...draft.accounts, { id: uid(), name: name.trim(), kind: 'Checking', balance: 0 }] }); setName(''); };
   return (
-    <StepFrame step={n} title="Where is your money?" subtitle="Add each account and the cash you hold. Balances only, no logins." onBack={onBack}
+    <StepFrame step={n} title={scanned ? `We found ${draft.accounts.length} ${draft.accounts.length === 1 ? 'account' : 'accounts'}` : 'Where is your money?'}
+      subtitle={scanned ? 'Check the balances. Fix any that look off, and add cash or other accounts.' : 'Add each account and the cash you hold. Balances only, no logins.'} onBack={onBack}
       footer={<BigButton title="Looks right" disabled={total <= 0} onPress={onNext} />}>
       <Row title="Cash" note="In your wallet"><AmountInput label="Cash" value={draft.cash} onChange={(v) => set({ cash: v })} /></Row>
       {draft.accounts.map((a) => (
-        <Row key={a.id} title={a.name} note="Added by hand"><AmountInput label={`${a.name} balance`} value={a.balance} onChange={(v) => set({ accounts: draft.accounts.map((x) => (x.id === a.id ? { ...x, balance: v } : x)) })} /></Row>
+        <Row key={a.id} title={a.name} note={a.note ?? 'Added by hand'}><AmountInput label={`${a.name} balance`} value={a.balance} onChange={(v) => set({ accounts: draft.accounts.map((x) => (x.id === a.id ? { ...x, balance: v } : x)) })} /></Row>
       ))}
       <View style={s.addRow}>
         <TextInput accessibilityLabel="Account name" placeholder="Account name" placeholderTextColor={colors.muted} value={name} onChangeText={setName} onSubmitEditing={add} style={s.nameInput} />
@@ -119,7 +152,7 @@ function Regular({ n, draft, set, onBack, onNext }: P) {
   const save = () => { if (!name.trim() || !amt) return; set({ regular: [...draft.regular, { id: uid(), name: name.trim(), kind, monthly: amt, note: 'Every month', on: true }] }); setName(''); setAmt(0); setOpen(false); };
   const groups: { k: 'Loan' | 'Bill' | 'Subscription'; label: string }[] = [{ k: 'Loan', label: 'LOANS' }, { k: 'Bill', label: 'BILLS' }, { k: 'Subscription', label: 'SUBSCRIPTIONS' }];
   return (
-    <StepFrame step={n} title={draft.regular.length ? `${draft.regular.length} regular payments` : 'Regular payments'} subtitle="Rent, bills, subscriptions and loans that leave your account every month. Turn off any that aren't yours." onBack={onBack}
+    <StepFrame step={n} title={draft.regular.length ? `${draft.accounts.some((a) => a.note) ? 'We found ' : ''}${draft.regular.length} regular ${draft.regular.length === 1 ? 'payment' : 'payments'}` : 'Regular payments'} subtitle="Rent, bills, subscriptions and loans that leave your account every month. Turn off any that aren't yours." onBack={onBack}
       footer={<><CostFooter regular={regularTotal(draft)} everyday={usualTotal(draft)} /><BigButton title={on ? `Make ${on} into envelopes` : 'Continue'} onPress={onNext} /></>}>
       {groups.map((g) => {
         const items = draft.regular.filter((r) => r.kind === g.k);
