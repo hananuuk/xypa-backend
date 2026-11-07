@@ -10,6 +10,8 @@ import { colors } from './src/design/tokens';
 import { hidesTabBar, Nav, NavContext, Route, Sheet } from './src/nav';
 import { AccountDetail, AccountsScreen } from './src/screens/accounts/AccountsScreen';
 import { AssignScreen } from './src/screens/assign/AssignScreen';
+import { EditHomeScreen } from './src/screens/home/EditHomeScreen';
+import { NewMonthScreen } from './src/screens/month/NewMonthScreen';
 import { EnvelopeDetail } from './src/screens/envelope/EnvelopeDetail';
 import { GoalDetail, GoalsScreen } from './src/screens/goals/GoalsScreen';
 import { PlanScreen } from './src/screens/plan/PlanScreen';
@@ -56,6 +58,8 @@ function Shell() {
       case 'review': return <ReviewScreen />;
       case 'goal': return <GoalDetail id={r.id} />;
       case 'account': return <AccountDetail id={r.id} />;
+      case 'editHome': return <EditHomeScreen />;
+      case 'newMonth': return <NewMonthScreen />;
     }
   };
 

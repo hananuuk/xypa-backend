@@ -6,7 +6,9 @@ export type Route =
   | { name: 'assign' }
   | { name: 'review' }
   | { name: 'goal'; id: string }
-  | { name: 'account'; id: string };
+  | { name: 'account'; id: string }
+  | { name: 'editHome' }
+  | { name: 'newMonth' };
 
 /** Bottom sheets opened from anywhere. */
 export type Sheet =
@@ -38,4 +40,4 @@ export const useNav = () => {
 };
 
 /** Routes that hide the tab bar (spec §3.1). */
-export const hidesTabBar = (r: Route | undefined) => !!r && (r.name === 'assign' || r.name === 'review');
+export const hidesTabBar = (r: Route | undefined) => !!r && (r.name === 'assign' || r.name === 'review' || r.name === 'editHome' || r.name === 'newMonth');

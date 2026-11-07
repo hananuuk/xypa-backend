@@ -75,7 +75,12 @@ export function PlanScreen() {
           </>
         }
       />
-      {st.homeOrder.map((id) => (st.homeHidden[id] && id !== 'envs' ? null : cards[id]))}
+      {st.homeOrder.map((id) => (st.homeHidden[id] && id !== 'envs' ? null : (
+        <Pressable key={id} delayLongPress={600} onLongPress={() => nav.push({ name: 'editHome' })} accessible={false}>{cards[id]}</Pressable>
+      )))}
+      <Pressable accessibilityRole="button" accessibilityLabel="Customize home" onPress={() => nav.push({ name: 'editHome' })} style={s.customize}>
+        <Text style={s.customizeText}>Customize home</Text>
+      </Pressable>
     </ScrollView>
   );
 }
@@ -158,6 +163,8 @@ function EnvelopesBlock() {
 const s = StyleSheet.create({
   fill: { flex: 1 },
   content: { paddingHorizontal: 16, gap: 4 },
+  customize: { alignItems: 'center', justifyContent: 'center', minHeight: 48, marginTop: 8 },
+  customizeText: { fontFamily: font.regular, fontSize: 14, color: colors.muted },
   month: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44 },
   monthText: { fontFamily: font.regular, fontSize: 17, color: colors.ink },
   review: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.accent, borderRadius: 999, height: 40, paddingLeft: 6, paddingRight: 14 },
