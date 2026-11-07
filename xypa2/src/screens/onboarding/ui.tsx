@@ -1,6 +1,6 @@
 import React from 'react';
 import { tr } from '../../i18n';
-import { Image, ImageSourcePropType, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Image, ImageSourcePropType, Pressable, ScrollView, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native';
 import { Text } from '../../design/Text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
@@ -13,9 +13,10 @@ export const ob = { page: '#FAF8F4', ink: '#1C1915', pink: '#F3BAB2' };
 /** Pastel poster background with two soft glows (Hello and Done). */
 export function Poster({ bg = ob.pink, glowA = '#E98A80', glowB = '#E9F181', image, children }: { bg?: string; glowA?: string; glowB?: string; image?: ImageSourcePropType; children: React.ReactNode }) {
   const insets = useSafeAreaInsets();
+  const win = useWindowDimensions();
   return (
     <View style={[{ flex: 1, backgroundColor: bg, paddingTop: insets.top + 12, paddingBottom: Math.max(insets.bottom, 16) + 8, paddingHorizontal: 20 }]}>
-      {image ? <Image source={image} resizeMode="cover" style={StyleSheet.absoluteFill} accessible={false} /> : (
+      {image ? <Image source={image} resizeMode="cover" style={{ position: 'absolute', top: 0, left: 0, width: win.width, height: win.height }} accessible={false} /> : (
       <Svg style={StyleSheet.absoluteFill} pointerEvents="none">
         <Defs>
           <RadialGradient id="a" cx="0%" cy="45%" rx="70%" ry="30%"><Stop offset="0" stopColor={glowA} stopOpacity="0.85" /><Stop offset="1" stopColor={glowA} stopOpacity="0" /></RadialGradient>

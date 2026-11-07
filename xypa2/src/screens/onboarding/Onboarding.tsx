@@ -79,11 +79,6 @@ function Hello({ onStart, busy, message }: { onStart: () => void; busy: boolean;
   return (
     <Poster image={require('../../../assets/hello-bg.jpg')}>
       <View style={s.topRow}><Text style={s.logo}>xypa</Text><Text style={s.index}>--01</Text></View>
-      <View style={s.fan}>
-        <EnvCard style={{ left: 8, top: 62, transform: [{ rotate: '-7deg' }] }} label="Rent" value="1,200,000₮" />
-        <EnvCard style={{ right: 8, top: 56, transform: [{ rotate: '7deg' }] }} label="Groceries" value="700,000₮" />
-        <EnvCard style={{ alignSelf: 'center', top: 0, zIndex: 2 }} label="Safe today" value="32,500₮" red />
-      </View>
       <View style={{ flex: 1 }} />
       <Text style={s.hello} accessibilityRole="header">Give every tögrög a job.</Text>
       <Text style={s.helloSub}>Plan the money you already have, one envelope at a time, and always know what's safe to spend.</Text>
@@ -92,7 +87,7 @@ function Hello({ onStart, busy, message }: { onStart: () => void; busy: boolean;
         <View style={s.g}><Text style={s.gText}>G</Text></View>
         <Text style={s.googleText}>Continue with Google</Text>
       </Pressable>
-      <Text style={s.login} accessibilityLiveRegion="polite">{message ?? 'Signing in only shares your name and email. Reading your bank emails is a separate step, and you choose.'}</Text>
+      {message ? <Text style={s.login} accessibilityLiveRegion="polite">{message}</Text> : null}
     </Poster>
   );
 }
