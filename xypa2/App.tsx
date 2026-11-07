@@ -29,6 +29,8 @@ import { TxnListScreen } from './src/screens/reflect/TxnListScreen';
 import { AskScreen } from './src/screens/ask/AskScreen';
 import { ImportStatementScreen } from './src/screens/import/ImportStatementScreen';
 import { TxnSheet } from './src/sheets/TxnSheet';
+import { SortMerchantsScreen } from './src/screens/review/SortMerchantsScreen';
+import { topUnsortedMerchants } from './src/logic/topMerchants';
 import { StoreProvider, useStore } from './src/store/store';
 
 function Shell() {
@@ -43,6 +45,13 @@ function Shell() {
   React.useEffect(() => {
     if (inOnboarding) { setStack([]); setSheet(null); setTab('plan'); }
   }, [inOnboarding]);
+
+  // Right after setup from a statement or Gmail, offer to sort the most common merchants straight away.
+  const wasOnboarding = React.useRef(inOnboarding);
+  React.useEffect(() => {
+    if (wasOnboarding.current && !inOnboarding && topUnsortedMerchants(st.txns).length > 0) setStack([{ name: 'sortMerchants' }]);
+    wasOnboarding.current = inOnboarding;
+  }, [inOnboarding]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const back = useCallback(() => setStack((s) => s.slice(0, -1)), []);
   const nav: Nav = useMemo(() => ({
@@ -76,6 +85,7 @@ function Shell() {
       case 'settings': return <SettingsScreen />;
       case 'txnList': return <TxnListScreen title={r.title} month={r.month} envelopeId={r.envelopeId} merchant={r.merchant} />;
       case 'ask': return <AskScreen />;
+      case 'sortMerchants': return <SortMerchantsScreen />;
       case 'importStatement': return <ImportStatementScreen />;
     }
   };

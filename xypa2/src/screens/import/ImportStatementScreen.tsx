@@ -26,7 +26,8 @@ export function ImportStatementScreen() {
         {lines.map((l) => <Text key={l} style={s.line}>{l}</Text>)}
         {done.added === 0 ? <Text style={s.hint}>Everything in that statement was already here.</Text> : null}
       </Block>
-      {done.unsorted ? <Block><Button title="Sort them now" onPress={() => { nav.back(); nav.push({ name: 'review' }); }} /></Block> : null}
+      {done.unsorted ? <Block><Button title="Sort the most common merchants" onPress={() => { nav.back(); nav.push({ name: 'sortMerchants' }); }} /></Block> : null}
+      {done.unsorted ? <Block><Button variant="chip" title="Go through them one by one" onPress={() => { nav.back(); nav.push({ name: 'review' }); }} /></Block> : null}
       <Block><Button title="Add another statement" variant="chip" onPress={() => setDone(null)} /></Block>
     </ScreenFrame>
   );

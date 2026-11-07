@@ -43,7 +43,7 @@ export function ReviewScreen() {
   const file = (envId: string) => { st.fileTxn(txn.id, envId, rule); setRule(false); setAll(false); setI(i + 1); };
 
   return (
-    <ScreenFrame title={`Review ${i + 1} of ${queue.length}`} onBack={nav.back}
+    <ScreenFrame title={`Review ${i + 1} of ${queue.length}`} onBack={nav.back} right={<Button small variant="chip" title="By merchant" onPress={() => { nav.back(); nav.push({ name: 'sortMerchants' }); }} />}
       footer={
         <View style={s.nav}>
           <Button title="Previous" variant="chip" disabled={i === 0} onPress={() => { setI(i - 1); setRule(false); setAll(false); }} />

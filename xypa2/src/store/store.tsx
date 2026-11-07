@@ -55,6 +55,8 @@ type Store = Persisted & {
   cover: (targetId: string, sources: CoverSource[]) => void;
   addEnvelope: (e: Omit<Envelope, 'id' | 'budget' | 'color'> & { budget?: number }) => void;
   addTxn: (t: Omit<Txn, 'id' | 'source'>) => void;
+  /** File every unsorted purchase from one merchant, and remember it for next time. */
+  fileMerchant: (merchant: string, envelopeId: string) => void;
   fileTxn: (txnId: string, envelopeId: string, rule?: boolean) => void;
   addGoalMoney: (goalId: string, amount: number) => void;
   removeGoal: (goalId: string) => void;
@@ -141,6 +143,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       ...s,
       txns: autoFile([...s.txns, { ...t, id: `txn-${Date.now()}`, source: 'manual' }], s.rules),
       accounts: s.accounts.map((a) => (a.id === t.accountId ? { ...a, balance: a.balance + (t.type === 'spend' ? -t.amount : t.amount) } : a)),
+    })),
+    fileMerchant: (merchant, envelopeId) => change('Sorted', (s) => ({
+      ...s,
+      txns: s.txns.map((t) => (t.merchant === merchant && t.envelopeId === null && t.type === 'spend' && !t.kind ? { ...t, envelopeId } : t)),
+      rules: s.rules.some((r) => r.merchant === merchant) ? s.rules : [...s.rules, { merchant, envelopeId }],
+      checklist: { ...s.checklist, sort: true },
     })),
     fileTxn: (txnId, envelopeId, rule) => change('Filed', (s) => {
       const txn = s.txns.find((t) => t.id === txnId);
