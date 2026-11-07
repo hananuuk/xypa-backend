@@ -6,9 +6,8 @@ import type { Today } from './calendar';
 // Everyday 527,400₮ left, Bills 1,250,000₮ left, safe to spend ≈ 20,800₮ on day 3 of 30.
 
 export const seedAccounts: Account[] = [
-  { id: 'mbank', name: 'M bank', kind: 'Checking', balance: 2350000, syncOk: true, lastSync: 'Today' },
+  { id: 'mbank', name: 'M bank', kind: 'Checking', balance: 2717400, syncOk: true, lastSync: 'Today' },
   { id: 'golomt', name: 'Golomt', kind: 'Checking', balance: 480000, syncOk: false, lastSync: '6 days ago' },
-  { id: 'cash', name: 'Cash', kind: 'Wallet', balance: 367400, syncOk: true },
 ];
 
 export const seedEnvelopes: Envelope[] = [

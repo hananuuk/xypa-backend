@@ -130,9 +130,8 @@ function Accounts({ n, draft, set, onBack, onNext }: P) {
   const add = () => { if (!name.trim()) return; set({ accounts: [...draft.accounts, { id: uid(), name: name.trim(), kind: 'Checking', balance: 0 }] }); setName(''); };
   return (
     <StepFrame step={n} title={scanned ? `We found ${draft.accounts.length} ${draft.accounts.length === 1 ? 'account' : 'accounts'}` : 'Where is your money?'}
-      subtitle={scanned ? 'Check the balances. Fix any that look off, and add cash or other accounts.' : 'Add each account and the cash you hold. Balances only, no logins.'} onBack={onBack}
+      subtitle={scanned ? 'Check the balances. Fix any that look off, and add any account we missed.' : 'Add each bank account you use. Balances only, no logins.'} onBack={onBack}
       footer={<BigButton title="Looks right" disabled={total <= 0} onPress={onNext} />}>
-      <Row title="Cash" note="In your wallet"><AmountInput label="Cash" value={draft.cash} onChange={(v) => set({ cash: v })} /></Row>
       {draft.accounts.map((a) => (
         <Row key={a.id} icon={<BankAvatar name={a.name} size={36} />} title={a.name} note={a.note ?? 'Added by hand'}><AmountInput label={`${a.name} balance`} value={a.balance} onChange={(v) => set({ accounts: draft.accounts.map((x) => (x.id === a.id ? { ...x, balance: v } : x)) })} /></Row>
       ))}

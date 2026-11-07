@@ -38,7 +38,7 @@ export function AccountsScreen() {
               <BankAvatar name={a.name} />
               <View style={{ flex: 1 }}>
                 <Text style={s.name}>{a.name}</Text>
-                {a.kind === 'Wallet' ? <Text style={s.label}>Cash</Text> : a.syncOk ? <Text style={s.label}>Synced {a.lastSync?.toLowerCase()}</Text>
+                {a.kind === 'Wallet' ? <Text style={s.label}>Wallet</Text> : a.syncOk ? <Text style={s.label}>Synced {a.lastSync?.toLowerCase()}</Text>
                   : <Pressable accessibilityRole="button" accessibilityLabel={`Fix sync for ${a.name}`} onPress={() => nav.openSheet({ name: 'fixSync', id: a.id })} hitSlop={8}><Text style={s.fix}>Not syncing · tap to fix</Text></Pressable>}
               </View>
               <Money value={a.balance} style={s.amt} />

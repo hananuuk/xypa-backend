@@ -7,7 +7,7 @@ const { parseAlert } = require('./alerts');
 
 const SESSION_DAYS = 90;
 const APP_REDIRECT = /^(exp|exps|xypa):\/\//;
-const SCAN_QUERY = '(receipt OR "order confirmation" OR "payment confirmation" OR "payment received" OR "Гүйлгээний мэдэгдэл" OR "зарлага" OR "орлого" OR "Гүйлгээний дүн" OR "Гүйлгээний утга" OR from:(m-bank.mn OR golomtbank.com OR khanbank.com OR tdbm.mn OR xacbank.mn OR statebank.mn)) newer_than:93d';
+const SCAN_QUERY = 'from:(m-bank OR golomt OR khanbank OR "khan bank" OR tdbm OR xacbank OR statebank OR bogdbank OR arigbank OR nibank OR ckbank OR creditbank OR transbank) newer_than:93d';
 
 const b64 = (b) => Buffer.from(b).toString('base64url');
 

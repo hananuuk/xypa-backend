@@ -1,22 +1,30 @@
 // Turns one bank-alert email into a transaction. Pure, so it is unit-tested without Gmail.
 const { findBestAmount, stripHtml, extractTxnDetail } = require('./parse');
 
+// Official Mongolian banks only. Matched against the SENDER, never the body, so a mail that merely mentions a bank
+// (or comes from a securities/insurance arm with a similar name) is not read as a bank alert.
 const BANKS = [
-  { name: 'M bank', re: /m[\s-]?bank|мбанк|м банк|mbank\.mn|m-bank\.mn/i },
-  { name: 'Khan Bank', re: /khan\s?bank|хаан\s?банк|khanbank/i },
+  { name: 'M bank', re: /m[\s-]?bank|мбанк|м банк/i },
+  { name: 'Khan Bank', re: /khan\s?bank|хаан\s?банк/i },
   { name: 'Golomt', re: /golomt|голомт/i },
-  { name: 'TDB', re: /\btdb\b|trade and development|худалдаа хөгжлийн|tdbm/i },
-  { name: 'XacBank', re: /xac\s?bank|хас\s?банк|xacbank/i },
-  { name: 'State Bank', re: /state\s?bank|төрийн банк|statebank/i },
-  { name: 'Capitron', re: /capitron|капитрон/i },
+  { name: 'TDB', re: /\btdb\b|tdbm|trade and development|худалдаа хөгжлийн/i },
+  { name: 'XacBank', re: /xac\s?bank|хас\s?банк/i },
+  { name: 'State Bank', re: /state\s?bank|төрийн банк/i },
   { name: 'Bogd', re: /bogd|богд/i },
+  { name: 'Arig', re: /arig|ариг/i },
+  { name: 'NIB', re: /nibank|national investment|үндэсний хөрөнгө/i },
+  { name: 'Chinggis Khaan Bank', re: /ckbank|chinggis|чингис/i },
+  { name: 'Credit Bank', re: /credit\s?bank|кредит\s?банк/i },
+  { name: 'Trans Bank', re: /trans\s?bank|транс\s?банк/i },
 ];
+const NOT_A_BANK = /securit|capital|insur|invest|broker|leasing|asset|fund|даатгал|үнэт цаас|хөрөнгө оруулалт(?!ын банк)/i;
 
-function detectBank(from, subject, body) {
-  const hay = `${from}\n${subject}\n${body.slice(0, 600)}`;
-  for (const b of BANKS) if (b.re.test(hay)) return b.name;
-  const display = from.replace(/<.*>/, '').replace(/"/g, '').trim();
-  return display || null;
+/** The official bank this sender belongs to, or null (securities firms, shops, anything else). */
+function detectBank(from) {
+  const f = String(from || '');
+  if (NOT_A_BANK.test(f)) return null;
+  const hit = BANKS.find((b) => b.re.test(f));
+  return hit ? hit.name : null;
 }
 
 function detectType(text) {
@@ -50,6 +58,8 @@ function detectAccount(text) {
 
 /** @returns {null | {bank, card, merchant, amount, type, date, balance, gmailId}} */
 function parseAlert({ id, from, subject, body, dateHeader }) {
+  const bank = detectBank(from);
+  if (!bank) return null;
   const clean = stripHtml(body || '');
   const amount = pickAmount(subject || '', clean);
   if (amount === null || amount <= 0) return null;
@@ -57,7 +67,7 @@ function parseAlert({ id, from, subject, body, dateHeader }) {
   const iso = dateHeader ? new Date(dateHeader) : null;
   return {
     gmailId: id,
-    bank: detectBank(from || '', subject || '', clean),
+    bank,
     card,
     merchant,
     amount: Math.round(amount),

@@ -6,7 +6,6 @@ import { assignedTotal, buildPlan, Draft, emptyDraft, fillWhatFits, monthCost, m
 const draft = (): Draft => ({
   ...emptyDraft(),
   accounts: [{ id: 'mb', name: 'M bank', kind: 'Checking', balance: 2350000 }, { id: 'gl', name: 'Golomt', kind: 'Checking', balance: 480000 }],
-  cash: 0,
   regular: [
     { id: 'rent', name: 'Rent', kind: 'Bill', monthly: 1200000, note: '', on: true },
     { id: 'loan', name: 'Khan Bank loan', kind: 'Loan', monthly: 450000, note: '', on: true },

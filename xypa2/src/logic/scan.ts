@@ -124,7 +124,7 @@ export function txnsFromScan(found: Found[], envelopes: Envelope[], accounts: Ac
   const byName = new Map(envelopes.map((e) => [e.name.toLowerCase(), e.id]));
   const byId = new Set(envelopes.map((e) => e.id));
   const bankId = (bank: string | null, account?: string) =>
-    accounts.find((a) => a.name === (bank ?? 'Bank account') || (account && a.name === `${bank} ··${account.slice(-4)}`))?.id ?? accounts[0]?.id ?? 'cash';
+    accounts.find((a) => a.name === (bank ?? 'Bank account') || (account && a.name === `${bank} ··${account.slice(-4)}`))?.id ?? accounts[0]?.id ?? 'unknown';
   // A transfer to an account number that is one of yours is you moving money.
   const mine = new Set([...found.map((f) => f.account), ...accounts.map((a) => a.id.match(/\d{8,}/)?.[0])].filter((n): n is string => !!n));
   const isMine = (cp?: string) => !!cp && [...mine].some((n) => n.endsWith(cp));

@@ -47,3 +47,11 @@ test('real Golomt e-banking mail: transfer between own accounts is not spending'
   assert.equal(t.type, 'transfer');
   assert.equal(t.amount, 13224);
 });
+
+test('only official banks count: a securities firm is not a bank', () => {
+  const body = 'Гүйлгээний дүн: 50,000.00MNT Таны дансанд орлого хийгдлээ M bank';
+  assert.equal(parseAlert({ ...base, from: 'M Securities <noreply@msecurities.mn>', subject: 'Гүйлгээний мэдэгдэл', body }), null);
+  assert.equal(parseAlert({ ...base, from: 'TDB Capital <info@tdbcapital.mn>', subject: 'Гүйлгээний мэдэгдэл', body }), null);
+  assert.equal(parseAlert({ ...base, from: 'Some Shop <receipt@shop.mn>', subject: 'Receipt', body }), null);
+  assert.equal(parseAlert({ ...base, from: 'smartinfo <smartinfo15@m-bank.mn>', subject: 'Гүйлгээний мэдэгдэл', body }).bank, 'M bank');
+});

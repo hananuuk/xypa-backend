@@ -93,7 +93,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     AsyncStorage.getItem(KEY).then((raw) => {
-      if (raw) { try { setState({ ...defaults(), ...JSON.parse(raw) }); } catch { /* corrupt save: keep defaults */ } }
+      if (raw) { try { { const saved = { ...defaults(), ...JSON.parse(raw) } as Persisted; setState({ ...saved, accounts: saved.accounts.filter((a) => !(a.id === 'cash' && a.balance === 0 && !saved.txns.some((t) => t.accountId === 'cash'))) }); } } catch { /* corrupt save: keep defaults */ } }
     }).finally(() => setReady(true));
   }, []);
 
