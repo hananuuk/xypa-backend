@@ -108,7 +108,7 @@ function Shell() {
           {stack.map((r, i) => (
             <View key={i} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: colors.page }}>{renderRoute(r)}</View>
           ))}
-          {showBar ? <TabBar active={tab} onChange={setTab} onAdd={() => setSheet({ name: 'addTxn' })} /> : null}
+          {showBar ? <TabBar active={tab} onChange={(t) => { setStack([]); setSheet(null); setTab(t); }} onAdd={() => setSheet({ name: 'addTxn' })} /> : null}
           <Toast toast={st.toast} onDismiss={st.dismissToast} bottom={(showBar ? 96 : 24) + insets.bottom} />
           {sheet ? renderSheet(sheet) : null}
         </View>
