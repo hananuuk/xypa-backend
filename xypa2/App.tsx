@@ -14,6 +14,7 @@ import { EditHomeScreen } from './src/screens/home/EditHomeScreen';
 import { NewMonthScreen } from './src/screens/month/NewMonthScreen';
 import { EnvelopeDetail } from './src/screens/envelope/EnvelopeDetail';
 import { GoalDetail, GoalsScreen } from './src/screens/goals/GoalsScreen';
+import { Onboarding } from './src/screens/onboarding/Onboarding';
 import { PlanScreen } from './src/screens/plan/PlanScreen';
 import { ReflectScreen } from './src/screens/reflect/ReflectScreen';
 import { ReviewScreen } from './src/screens/review/ReviewScreen';
@@ -79,6 +80,8 @@ function Shell() {
       case 'confirmDeleteGoal': return <ConfirmDeleteGoalSheet id={s.id} onClose={close} onDeleted={() => { close(); back(); }} />;
     }
   };
+
+  if (st.onboarded === false) return <Onboarding />;
 
   const tabs = { plan: <PlanScreen />, goals: <GoalsScreen />, reflect: <ReflectScreen />, accounts: <AccountsScreen /> };
   const showBar = !hidesTabBar(top);

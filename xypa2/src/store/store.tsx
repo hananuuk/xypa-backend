@@ -16,6 +16,8 @@ export type Persisted = {
   accounts: Account[]; envelopes: Envelope[]; txns: Txn[]; goals: Goal[]; rules: MerchantRule[];
   hideAmounts: boolean; homeOrder: HomeCard[]; homeHidden: Partial<Record<HomeCard, boolean>>;
   checklist: Checklist; envView: 'list' | 'grid';
+  /** Missing (older saves) counts as onboarded; false means show onboarding. */
+  onboarded?: boolean;
 };
 
 const defaults = (): Persisted => ({
@@ -51,6 +53,8 @@ type Store = Persisted & {
   fixBalance: (accountId: string, balance: number) => void;
   addAccount: (a: Pick<Account, 'name' | 'kind' | 'balance'>) => void;
   setHomeLayout: (order: HomeCard[], hidden: Partial<Record<HomeCard, boolean>>) => void;
+  startOnboarding: () => void;
+  completeOnboarding: (plan: { accounts: Account[]; envelopes: Envelope[] }) => void;
 };
 
 const Ctx = createContext<Store | null>(null);
@@ -131,6 +135,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     addGoal: (g) => change(`${g.name} added`, (s) => ({ ...s, goals: [...s.goals, { ...g, id: `goal-${Date.now()}`, saved: 0, addedThisMonth: 0 }] })),
     fixBalance: (accountId, balance) => change('Balance updated', (s) => ({ ...s, accounts: s.accounts.map((a) => (a.id === accountId ? { ...a, balance, syncOk: true } : a)) })),
     addAccount: (a) => change(`${a.name} added`, (s) => ({ ...s, accounts: [...s.accounts, { ...a, id: `acc-${Date.now()}`, syncOk: true }] })),
+    startOnboarding: () => setState((s) => ({ ...s, onboarded: false })),
+    completeOnboarding: (plan) => setState((s) => ({
+      ...s, accounts: plan.accounts, envelopes: plan.envelopes, txns: [], goals: [], rules: [],
+      homeOrder: ['notes', 'rta', 'safe', 'envs'], homeHidden: {}, checklist: { sort: false, cover: false, check: false, assign: false }, onboarded: true,
+    })),
     setHomeLayout: (order, hidden) => setState((s) => ({ ...s, homeOrder: order, homeHidden: hidden })),
   };
 
