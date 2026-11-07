@@ -60,7 +60,7 @@ export function Onboarding() {
   if (step === 'noEmails') return <NoEmails onBack={() => setStep('intro')} onStatement={() => setStep('statement')} onAlerts={() => setStep('alerts')} onManual={() => setStep('accounts')} onOtherAccount={otherAccount} />;
   if (step === 'statement') return <StatementStep onBack={() => setStep('noEmails')} onRead={useFound} />;
   if (step === 'alerts') return <EmailAlerts onBack={() => setStep('noEmails')} onStatement={() => setStep('statement')} onManual={() => setStep('accounts')} />;
-  if (step === 'ready') return <Ready draft={draft} assigned={assigned} onOpen={() => { const plan = buildPlan(draft, assigned); st.completeOnboarding({ ...plan, txns: txnsFromScan(found, plan.envelopes, plan.accounts) }); }} onRestart={() => { setDraft(emptyDraft()); setAssigned({}); setFound([]); setStep('hello'); }} />;
+  if (step === 'ready') return <Ready draft={draft} assigned={assigned} onOpen={() => { const plan = buildPlan(draft, assigned); st.completeOnboarding({ ...plan, txns: txnsFromScan(found, plan.envelopes, plan.accounts, st.today.month) }); }} onRestart={() => { setDraft(emptyDraft()); setAssigned({}); setFound([]); setStep('hello'); }} />;
   if (step === 'intro') return <Intro onBack={() => setStep('hello')} onManual={() => { setFound([]); setStep('accounts'); }} onAllow={allowGmail} busy={busy} message={authMsg} />;
   if (step === 'accounts') return <Accounts n={n} draft={draft} set={set} onBack={back} onNext={next} />;
   if (step === 'regular') return <Regular n={n} draft={draft} set={set} onBack={back} onNext={next} />;

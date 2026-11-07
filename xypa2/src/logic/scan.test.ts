@@ -19,6 +19,7 @@ describe('scan', () => {
     const a = detectAccounts(rows);
     expect(a).toHaveLength(1);
     expect(a[0].balance).toBe(2301400);
+    expect(detectAccounts([f('A', 1, '2026-11-01', { account: '111122223333' }), f('B', 1, '2026-11-02', { account: '444455556666' })]).map((x) => x.name)).toEqual(['M bank ··3333', 'M bank ··6666']);
   });
   it('finds regular payments and kinds, not irregular shopping', () => {
     const r = detectRegular(rows);
@@ -42,7 +43,7 @@ describe('scan', () => {
     const d = draftFromScan(rows);
     const assigned = Object.fromEntries([...d.regular.map((r) => [`reg-${r.id}`, r.monthly]), ...d.usual.map((u) => [`use-${u.id}`, u.monthly])]);
     const plan = buildPlan(d, assigned);
-    const t = txnsFromScan(rows, plan.envelopes, plan.accounts);
+    const t = txnsFromScan(rows, plan.envelopes, plan.accounts, '2026-11');
     expect(t.find((x) => x.merchant === 'NETFLIX.COM')!.envelopeId).toBe('reg-netflix-com');
     expect(t.find((x) => x.merchant === 'NOMIN SUPERMARKET')!.envelopeId).toBe('use-groceries');
     expect(t.find((x) => x.type === 'income')!.envelopeId).toBeNull();

@@ -6,7 +6,7 @@ import { emptyDraft } from './onboarding';
 /** One transaction read from an email or a statement. */
 export type Found = {
   bank: string | null; card: string | null; merchant: string; amount: number;
-  type: 'spend' | 'income'; date: string | null; balance: number | null; source?: 'gmail' | 'statement'; gmailId?: string;
+  type: 'spend' | 'income'; date: string | null; balance: number | null; source?: 'gmail' | 'statement'; gmailId?: string; account?: string;
 };
 
 export const normalizeMerchant = (m: string) =>
@@ -17,13 +17,19 @@ const monthOf = (d: string) => d.slice(0, 7);
 const dayOf = (d: string) => parseInt(d.slice(8, 10), 10);
 const ordinal = (n: number) => `${n}${n % 10 === 1 && n !== 11 ? 'st' : n % 10 === 2 && n !== 12 ? 'nd' : n % 10 === 3 && n !== 13 ? 'rd' : 'th'}`;
 
-/** Accounts = one per bank seen. Balance comes from the newest alert that carried one (users can edit it). */
+/** One account per bank + account number seen. Balance comes from the newest row that carried one (users can edit it). */
 export function detectAccounts(found: Found[]): DraftAccount[] {
   const by = new Map<string, Found[]>();
-  for (const f of found) { const k = f.bank ?? 'Bank account'; by.set(k, [...(by.get(k) ?? []), f]); }
-  return [...by.entries()].map(([bank, rows]) => {
-    const withBal = rows.filter((r) => r.balance !== null && r.date).sort((a, b) => (a.date! < b.date! ? 1 : -1));
-    return { id: `bank-${normalizeMerchant(bank).toLowerCase().replace(/ /g, '-') || 'x'}`, name: bank, kind: 'Checking' as const, balance: withBal[0]?.balance ?? 0, note: rows.every((r) => r.source === 'statement') ? 'From your statement' : 'From your emails' };
+  for (const f of found) { const k = `${f.bank ?? 'Bank account'}|${f.account ?? ''}`; by.set(k, [...(by.get(k) ?? []), f]); }
+  const perBank = new Map<string, number>();
+  for (const k of by.keys()) { const bank = k.split('|')[0]; perBank.set(bank, (perBank.get(bank) ?? 0) + 1); }
+  return [...by.entries()].map(([key, rows]) => {
+    const [bank, account] = key.split('|');
+    let best: Found | null = null;
+    for (const r of rows) if (r.balance !== null && r.date && (!best || r.date >= best.date!)) best = r;
+    const name = perBank.get(bank)! > 1 && account ? `${bank} ··${account.slice(-4)}` : bank;
+    const id = `acct-${(bank + account).toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+    return { id, name, kind: 'Checking' as const, balance: best?.balance ?? 0, note: rows.every((r) => r.source === 'statement') ? 'From your statement' : 'From your emails' };
   });
 }
 
@@ -67,6 +73,7 @@ const CATEGORIES: { name: string; words: string[] }[] = [
 ];
 export function categoryOf(merchant: string): string {
   const m = merchant.toLowerCase();
+  if (m === 'transfer') return 'Transfers';
   return CATEGORIES.find((c) => c.words.some((w) => m.includes(w)))?.name ?? 'Everything else';
 }
 
@@ -78,6 +85,7 @@ export function detectUsual(found: Found[], regular: Regular[], months = 3): Usu
     if (f.type !== 'spend') continue;
     if (regularKeys.has(normalizeMerchant(f.merchant).toLowerCase().replace(/ /g, '-'))) continue;
     const c = categoryOf(f.merchant);
+    if (c === 'Transfers') continue;
     const t = totals.get(c) ?? { sum: 0, n: 0 };
     totals.set(c, { sum: t.sum + f.amount, n: t.n + 1 });
   }
@@ -94,10 +102,11 @@ export function draftFromScan(found: Found[]): Draft {
 }
 
 /** Turn what was found into transactions, filed into the envelopes made from the same scan (the rest stay unsorted for Review). */
-export function txnsFromScan(found: Found[], envelopes: Envelope[], accounts: Account[]): Txn[] {
+export function txnsFromScan(found: Found[], envelopes: Envelope[], accounts: Account[], month?: string): Txn[] {
   const byName = new Map(envelopes.map((e) => [e.name.toLowerCase(), e.id]));
   const byId = new Set(envelopes.map((e) => e.id));
-  const bankId = (bank: string | null) => accounts.find((a) => a.name === (bank ?? 'Bank account'))?.id ?? accounts[0]?.id ?? 'cash';
+  const bankId = (bank: string | null, account?: string) =>
+    accounts.find((a) => a.name === (bank ?? 'Bank account') || (account && a.name === `${bank} ··${account.slice(-4)}`))?.id ?? accounts[0]?.id ?? 'cash';
   return found.flatMap((f, i): Txn[] => {
     if (!f.date || f.amount <= 0) return [];
     let envelopeId: string | null = null;
@@ -105,6 +114,8 @@ export function txnsFromScan(found: Found[], envelopes: Envelope[], accounts: Ac
       const reg = `reg-${normalizeMerchant(f.merchant).toLowerCase().replace(/ /g, '-')}`;
       envelopeId = byId.has(reg) ? reg : byName.get(categoryOf(f.merchant).toLowerCase()) ?? null;
     }
-    return [{ id: f.gmailId ? `g-${f.gmailId}` : `s-${i}-${f.date}-${f.amount}`, envelopeId, merchant: f.merchant, amount: f.amount, type: f.type, date: f.date, accountId: bankId(f.bank), source: f.source ?? 'gmail' }];
+    // Older months already shaped the averages; only keep them if they landed in an envelope, so Review isn't flooded.
+    if (month && f.date.slice(0, 7) < month && envelopeId === null) return [];
+    return [{ id: f.gmailId ? `g-${f.gmailId}` : `s-${i}-${f.date}-${f.amount}`, envelopeId, merchant: f.merchant, amount: f.amount, type: f.type, date: f.date, accountId: bankId(f.bank, f.account), source: f.source ?? 'gmail' }];
   });
 }

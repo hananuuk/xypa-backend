@@ -5,6 +5,7 @@ import * as XLSX from 'xlsx';
 import { pdfToText } from '../../api/client';
 import { colors, font } from '../../design/tokens';
 import { Found } from '../../logic/scan';
+import { parseKnownStatement } from '../../logic/bankStatements';
 import { dedupe, parseRows, parseText } from '../../logic/statement';
 import { BigButton, ob, StepFrame } from './ui';
 
@@ -17,17 +18,18 @@ function toBase64(buf: ArrayBuffer): string {
   return btoa(bin);
 }
 
-async function readFile(a: DocumentPicker.DocumentPickerAsset, bank: string): Promise<Found[]> {
+async function readFile(a: DocumentPicker.DocumentPickerAsset, bank: string | null): Promise<Found[]> {
   const buf = await (await fetch(a.uri)).arrayBuffer();
   const name = a.name.toLowerCase();
   if (name.endsWith('.pdf') || a.mimeType === 'application/pdf') {
     if (buf.byteLength > 4 * 1024 * 1024) throw new Error(`${a.name} is bigger than 4 MB`);
-    return parseText((await pdfToText(toBase64(buf))).text, bank);
+    const text = (await pdfToText(toBase64(buf))).text;
+    return parseKnownStatement(text)?.found ?? parseText(text, bank ?? 'Bank');
   }
   const wb = name.endsWith('.csv') || name.endsWith('.txt')
     ? XLSX.read(new TextDecoder('utf-8').decode(buf), { type: 'string' })
     : XLSX.read(new Uint8Array(buf), { type: 'array', cellDates: false });
-  return wb.SheetNames.flatMap((n) => parseRows(XLSX.utils.sheet_to_json<unknown[]>(wb.Sheets[n], { header: 1, raw: true, defval: '' }), bank));
+  return wb.SheetNames.flatMap((n) => parseRows(XLSX.utils.sheet_to_json<unknown[]>(wb.Sheets[n], { header: 1, raw: true, defval: '' }), bank ?? 'Bank'));
 }
 
 /** Upload a statement (spec 4.3): pick the bank, follow the steps, add files, read them. */
@@ -47,7 +49,6 @@ export function StatementStep({ onBack, onRead }: { onBack: () => void; onRead: 
   };
 
   const read = async () => {
-    if (!bank) return;
     setBusy(true); setMsg(null);
     try {
       const all: Found[] = [];
@@ -65,12 +66,13 @@ export function StatementStep({ onBack, onRead }: { onBack: () => void; onRead: 
     <StepFrame step={1} title="Upload a statement" subtitle="Your last 3 months from your bank. xypa reads it on the spot to find your accounts, regular payments and spending." onBack={onBack}
       footer={<>
         {msg ? <Text style={s.msg} accessibilityLiveRegion="polite">{msg}</Text> : null}
-        <BigButton title={busy ? 'Reading…' : 'Read statement'} disabled={!bank || files.length === 0 || busy} onPress={read} />
+        <BigButton title={busy ? 'Reading…' : 'Read statement'} disabled={files.length === 0 || busy} onPress={read} />
       </>}>
-      <Text style={s.h}>1. Pick your bank</Text>
+      <Text style={s.h}>1. Your bank (optional)</Text>
+      <Text style={s.hint}>M bank and Golomt statements are recognised on their own. Pick your bank for any other.</Text>
       <View style={s.chips}>
         {BANKS.map((b) => (
-          <Pressable key={b} accessibilityRole="radio" accessibilityState={{ selected: bank === b }} accessibilityLabel={b} onPress={() => setBank(b)} style={[s.chip, bank === b && { backgroundColor: ob.ink }]}>
+          <Pressable key={b} accessibilityRole="radio" accessibilityState={{ selected: bank === b }} accessibilityLabel={b} onPress={() => setBank(bank === b ? null : b)} style={[s.chip, bank === b && { backgroundColor: ob.ink }]}>
             <Text style={[s.chipT, bank === b && { color: colors.white }]}>{b}</Text>
           </Pressable>
         ))}
@@ -95,6 +97,7 @@ export function StatementStep({ onBack, onRead }: { onBack: () => void; onRead: 
 }
 
 const s = StyleSheet.create({
+  hint: { fontFamily: font.regular, fontSize: 14, lineHeight: 20, color: colors.ink2, marginBottom: 10, marginTop: -4 },
   h: { fontFamily: font.medium, fontSize: 17, color: ob.ink, marginTop: 22, marginBottom: 10 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: { minHeight: 44, borderRadius: 22, backgroundColor: colors.chip, paddingHorizontal: 18, justifyContent: 'center' },

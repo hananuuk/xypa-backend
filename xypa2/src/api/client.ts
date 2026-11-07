@@ -61,7 +61,8 @@ export async function scanGmail(onProgress: (p: ScanProgress) => void): Promise<
   onProgress({ read: 0, total: ids.length, found: 0 });
   for (let i = 0; i < ids.length; i += 25) {
     const r = await call<{ transactions: Found[]; read: number }>('/v2/scan/batch', { method: 'POST', body: JSON.stringify({ ids: ids.slice(i, i + 25) }) });
-    out.push(...r.transactions.map((t) => ({ ...t, source: 'gmail' as const })));
+    // own-account transfers (type "transfer") are not spending or income
+    out.push(...r.transactions.filter((t) => (t.type as string) !== 'transfer').map((t) => ({ ...t, source: 'gmail' as const })));
     onProgress({ read: Math.min(ids.length, i + 25), total: ids.length, found: out.length });
   }
   return out;
