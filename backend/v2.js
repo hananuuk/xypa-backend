@@ -156,9 +156,10 @@ function mount(app, { pool }) {
     if (typeof b !== 'string' || b.length < 100) return res.status(400).json({ error: 'No file received.' });
     const buf = Buffer.from(b, 'base64');
     if (buf.slice(0, 4).toString() !== '%PDF') return res.status(400).json({ error: 'That does not look like a PDF.' });
-    const { PDFParse } = require('pdf-parse');
-    const parser = new PDFParse({ data: new Uint8Array(buf) });
-    try { res.json({ text: (await parser.getText()).text || '' }); } finally { await parser.destroy(); }
+    const { extractText, getDocumentProxy } = await import('unpdf');
+    const pdf = await getDocumentProxy(new Uint8Array(buf));
+    const { text } = await extractText(pdf, { mergePages: true });
+    res.json({ text: text || '' });
   }));
 
   // Scanning is split into small calls (list ids, then parse batches) so each one stays well inside serverless time limits.
