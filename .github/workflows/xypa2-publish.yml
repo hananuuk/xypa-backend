@@ -1,0 +1,30 @@
+name: Publish xypa 2.0 to Expo Go
+on:
+  push:
+    branches: [xypa-2]
+    paths: ['xypa2/**']
+  workflow_dispatch:
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: xypa2
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: xypa2/package-lock.json
+      - run: npm ci
+      - run: npx vitest run
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      - name: Link Expo project (first run only)
+        run: |
+          if ! grep -q '"projectId"' app.json; then eas init --force --non-interactive; fi
+      - name: Publish update
+        run: eas update --branch default --message "${{ github.sha }}" --non-interactive

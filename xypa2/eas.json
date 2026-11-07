@@ -1,0 +1,4 @@
+{
+  "cli": { "appVersionSource": "remote" },
+  "build": { "preview": { "channel": "preview" } }
+}
