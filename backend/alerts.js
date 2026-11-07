@@ -20,6 +20,7 @@ function detectBank(from, subject, body) {
 }
 
 function detectType(text) {
+  if (/Өөрийн данс хооронд|own account/i.test(text)) return 'transfer';
   const out = /зарлага|expense|debit|purchase|payment to|худалдан авалт/i.test(text);
   const inc = /орлого|income|credit(?!\s*card)|received|хүлээн авсан|илгээв/i.test(text);
   if (out) return 'spend';
@@ -30,6 +31,8 @@ function detectType(text) {
 function pickAmount(subject, clean) {
   const labeled = clean.match(/(?:Гүйлгээний дүн|Дүн|Amount)\s*[:：]?\s*(\d{1,3}(?:,\d{3})*(?:\.\d{1,2})?)/i);
   if (labeled) return parseFloat(labeled[1].replace(/,/g, ''));
+  const currencyFirst = clean.match(/MNT\s*(\d{1,3}(?:,\d{3})*(?:\.\d{1,2})?)/);
+  if (currencyFirst) return parseFloat(currencyFirst[1].replace(/,/g, ''));
   // never let the running balance ("Үлдэгдэл") be mistaken for the amount
   const withoutBalance = clean.split('\n').filter((l) => !/Үлдэгдэл|Balance|Available/i.test(l)).join('\n');
   return findBestAmount(`${subject}\n${withoutBalance}`);
@@ -38,6 +41,11 @@ function pickAmount(subject, clean) {
 function detectBalance(text) {
   const m = text.match(/(?:Үлдэгдэл|Balance|Available)\s*[:：]?\s*(\d{1,3}(?:,\d{3})*(?:\.\d{1,2})?)\s?(?:MNT|₮)?/i);
   return m ? Math.round(parseFloat(m[1].replace(/,/g, ''))) : null;
+}
+
+function detectAccount(text) {
+  const m = text.match(/(?:Илгээсэн данс|Хүлээн авсан данс|Данс)\s*[:：]\s*(\d{6,})/);
+  return m ? m[1] : null;
 }
 
 /** @returns {null | {bank, card, merchant, amount, type, date, balance, gmailId}} */
@@ -56,7 +64,8 @@ function parseAlert({ id, from, subject, body, dateHeader }) {
     type: detectType(`${subject}\n${clean}`),
     date: iso && !Number.isNaN(iso.getTime()) ? iso.toISOString().slice(0, 10) : null,
     balance: detectBalance(clean),
+    account: detectAccount(clean),
   };
 }
 
-module.exports = { parseAlert, detectBank, detectType, detectBalance };
+module.exports = { parseAlert, detectBank, detectType, detectBalance, detectAccount };

@@ -27,3 +27,23 @@ test('incoming transfer is income', () => {
 test('no amount is skipped', () => {
   assert.equal(parseAlert({ ...base, from: 'x', subject: 'hello', body: 'no money here' }), null);
 });
+
+// Layouts below are the real ones from M bank and Golomt (account numbers and names made up).
+test('real M bank alert: expense with account number, no balance', () => {
+  const t = parseAlert({ ...base, from: 'smartinfo <smartinfo15@m-bank.mn>', subject: 'М банĸ - Гүйлгээний мэдэгдэл',
+    body: 'Таны дансанд зарлага хийгдлээ.\nИлгээгчийн мэдээлэл:\nИлгээсэн данс: 8000000001\nГүйлгээний мэдээлэл:\nГүйлгээний дүн: 23,000.00MNT\nГүйлгээний утга: 4207********1728:TLJ CENTRAL 2\n' });
+  assert.equal(t.bank, 'M bank');
+  assert.equal(t.type, 'spend');
+  assert.equal(t.amount, 23000);
+  assert.equal(t.merchant, 'TLJ CENTRAL 2');
+  assert.equal(t.account, '8000000001');
+  assert.equal(t.balance, null);
+});
+
+test('real Golomt e-banking mail: transfer between own accounts is not spending', () => {
+  const t = parseAlert({ ...base, from: '<alert@golomtbank.com>', subject: 'Golomt Bank: E-Banking',
+    body: 'Таны интернэт банкаар хийсэн гүйлгээний мэдээлэл.\nЛавлах дугаар: 449710704 Гүйлгээний огноо: 02-11-2026 20:56:59\nШилжүүлэгчийн мэдээлэл Хүлээн авагчийн мэдээлэл Гүйлгээний дүн Ханш\nГоломт Банк Голомт банк MNT 13,224.10\nГүйлгээний утга\nӨөрийн данс хооронд 1.0\nГүйлгээний төлөв Амжилттай' });
+  assert.equal(t.bank, 'Golomt');
+  assert.equal(t.type, 'transfer');
+  assert.equal(t.amount, 13224);
+});
