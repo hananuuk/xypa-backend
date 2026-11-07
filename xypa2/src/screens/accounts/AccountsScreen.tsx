@@ -45,6 +45,7 @@ export function AccountsScreen() {
           </Pressable>
         ))}
       </Block>
+      <Block><Button title="Add a bank statement" variant="chip" onPress={() => nav.push({ name: 'importStatement' })} /></Block>
     </ScrollView>
   );
 }

@@ -27,6 +27,7 @@ import { MonthPickerSheet, MoveInSheet, NewEnvelopeSheet, SafeExplainSheet } fro
 import { ConfirmLogOutSheet, CurrencySheet, EditNameSheet, GmailSheet, LanguageSheet } from './src/sheets/SettingsSheets';
 import { TxnListScreen } from './src/screens/reflect/TxnListScreen';
 import { AskScreen } from './src/screens/ask/AskScreen';
+import { ImportStatementScreen } from './src/screens/import/ImportStatementScreen';
 import { StoreProvider, useStore } from './src/store/store';
 
 function Shell() {
@@ -74,6 +75,7 @@ function Shell() {
       case 'settings': return <SettingsScreen />;
       case 'txnList': return <TxnListScreen title={r.title} month={r.month} envelopeId={r.envelopeId} merchant={r.merchant} />;
       case 'ask': return <AskScreen />;
+      case 'importStatement': return <ImportStatementScreen />;
     }
   };
 

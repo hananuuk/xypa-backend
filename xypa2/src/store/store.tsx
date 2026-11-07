@@ -5,6 +5,8 @@ import {
 } from '../logic/budget';
 import type { Account, CoverSource, Envelope, Goal, MerchantRule, Txn } from '../logic/types';
 import { CurrencyCode, setCurrency } from '../logic/money';
+import { ImportResult, planImport } from '../logic/importStatement';
+import type { Found } from '../logic/scan';
 import { getToday } from './calendar';
 import { seedAccounts, seedEnvelopes, seedGoals, seedRules, seedTxns } from './seed';
 
@@ -66,6 +68,8 @@ type Store = Persisted & {
   setCurrencyCode: (c: CurrencyCode) => void;
   setLanguage: (l: 'en' | 'mn') => void;
   setPro: (v: boolean) => void;
+  /** Add a statement's accounts and transactions after setup. Skips what is already here. */
+  importStatement: (found: Found[]) => ImportResult;
   setNotify: (k: 'overspend' | 'newTxns' | 'morning', v: boolean) => void;
   logOut: () => void;
   completeOnboarding: (plan: { accounts: Account[]; envelopes: Envelope[]; txns?: Txn[] }) => void;
@@ -154,6 +158,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setSession: (me) => setState((s) => ({ ...s, profile: { name: s.profile?.name || me.name || '', email: me.email, gmail: me.gmailConnected } })),
     setCurrencyCode: (c) => setState((s) => ({ ...s, currency: c })),
     setLanguage: (l) => setState((s) => ({ ...s, language: l })),
+    importStatement: (found) => {
+      const r = planImport(found, state.accounts, state.envelopes, state.txns, state.rules, month);
+      if (r.added > 0 || r.newAccounts.length > 0) {
+        change(`${r.added} transaction${r.added === 1 ? '' : 's'} added`, (s) => ({ ...s, accounts: r.accounts, txns: r.txns }));
+      }
+      return r;
+    },
     setPro: (v) => setState((s) => ({ ...s, pro: v })),
     setNotify: (k, v) => setState((s) => ({ ...s, notify: { overspend: true, newTxns: true, morning: false, ...s.notify, [k]: v } })),
     logOut: () => { setToast(null); setState({ ...defaults(), onboarded: false, profile: undefined }); },

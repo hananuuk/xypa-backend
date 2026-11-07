@@ -33,7 +33,7 @@ async function readFile(a: DocumentPicker.DocumentPickerAsset, bank: string | nu
 }
 
 /** Upload a statement (spec 4.3): pick the bank, follow the steps, add files, read them. */
-export function StatementStep({ onBack, onRead }: { onBack: () => void; onRead: (found: Found[]) => void }) {
+export function StatementStep({ onBack, onRead, plain }: { onBack: () => void; onRead: (found: Found[]) => void; plain?: boolean }) {
   const [bank, setBank] = useState<string | null>(null);
   const [files, setFiles] = useState<DocumentPicker.DocumentPickerAsset[]>([]);
   const [busy, setBusy] = useState(false);
@@ -63,7 +63,7 @@ export function StatementStep({ onBack, onRead }: { onBack: () => void; onRead: 
   };
 
   return (
-    <StepFrame step={1} title="Upload a statement" subtitle="Your last 3 months from your bank. xypa reads it on the spot to find your accounts, regular payments and spending." onBack={onBack}
+    <StepFrame step={plain ? 0 : 1} title={plain ? 'Add a statement' : 'Upload a statement'} subtitle={plain ? 'xypa adds anything new and skips what it already has. Your budget stays as it is.' : 'Your last 3 months from your bank. xypa reads it on the spot to find your accounts, regular payments and spending.'} onBack={onBack}
       footer={<>
         {msg ? <Text style={s.msg} accessibilityLiveRegion="polite">{msg}</Text> : null}
         <BigButton title={busy ? 'Reading…' : 'Read statement'} disabled={files.length === 0 || busy} onPress={read} />

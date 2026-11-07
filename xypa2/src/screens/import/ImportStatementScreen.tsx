@@ -1,0 +1,38 @@
+import React, { useState } from 'react';
+import { StyleSheet, Text } from 'react-native';
+import { Block, Button } from '../../design/Primitives';
+import { ScreenFrame } from '../../design/ScreenFrame';
+import { colors, font } from '../../design/tokens';
+import type { ImportResult } from '../../logic/importStatement';
+import { useNav } from '../../nav';
+import { useStore } from '../../store/store';
+import { StatementStep } from '../onboarding/StatementStep';
+
+/** Add more statements any time after setup. */
+export function ImportStatementScreen() {
+  const st = useStore();
+  const nav = useNav();
+  const [done, setDone] = useState<ImportResult | null>(null);
+  if (!done) return <StatementStep plain onBack={nav.back} onRead={(found) => setDone(st.importStatement(found))} />;
+  const lines = [
+    `${done.added} new ${done.added === 1 ? 'transaction' : 'transactions'} added`,
+    done.duplicates ? `${done.duplicates} already in xypa, skipped` : null,
+    done.newAccounts.length ? `New ${done.newAccounts.length === 1 ? 'account' : 'accounts'}: ${done.newAccounts.join(', ')}` : null,
+    done.unsorted ? `${done.unsorted} need sorting into an envelope` : null,
+  ].filter(Boolean) as string[];
+  return (
+    <ScreenFrame title="Statement added" onBack={nav.back}>
+      <Block>
+        {lines.map((l) => <Text key={l} style={s.line}>{l}</Text>)}
+        {done.added === 0 ? <Text style={s.hint}>Everything in that statement was already here.</Text> : null}
+      </Block>
+      {done.unsorted ? <Block><Button title="Sort them now" onPress={() => { nav.back(); nav.push({ name: 'review' }); }} /></Block> : null}
+      <Block><Button title="Add another statement" variant="chip" onPress={() => setDone(null)} /></Block>
+    </ScreenFrame>
+  );
+}
+
+const s = StyleSheet.create({
+  line: { fontFamily: font.regular, fontSize: 16, lineHeight: 26, color: colors.ink },
+  hint: { fontFamily: font.regular, fontSize: 14, color: colors.muted, marginTop: 6 },
+});

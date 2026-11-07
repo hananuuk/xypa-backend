@@ -57,10 +57,12 @@ export function StepFrame({ step, title, subtitle, onBack, children, footer }: {
     <View style={{ flex: 1, backgroundColor: ob.page, paddingTop: insets.top + 8 }}>
       <View style={sf.head}>
         <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={onBack} style={sf.back}><Icon name="chevronLeft" size={20} /></Pressable>
-        <View style={sf.segs} accessible accessibilityLabel={`Step ${step} of 6`}>
-          {[1, 2, 3, 4, 5, 6].map((i) => <View key={i} style={[sf.seg, { backgroundColor: i <= step ? ob.ink : '#DAD6CE' }]} />)}
-        </View>
-        <Text style={sf.count}>{step} of 6</Text>
+        {step > 0 ? (<>
+          <View style={sf.segs} accessible accessibilityLabel={`Step ${step} of 6`}>
+            {[1, 2, 3, 4, 5, 6].map((i) => <View key={i} style={[sf.seg, { backgroundColor: i <= step ? ob.ink : '#DAD6CE' }]} />)}
+          </View>
+          <Text style={sf.count}>{step} of 6</Text>
+        </>) : null}
       </View>
       <ScrollView contentContainerStyle={sf.body} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         <Text style={sf.title} accessibilityRole="header">{title}</Text>

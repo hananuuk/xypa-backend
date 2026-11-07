@@ -13,6 +13,8 @@ import { useStore } from '../../store/store';
 import { useNav } from '../../nav';
 import { Button } from '../../design/Primitives';
 
+// Ask xypa is built but paused until there is an API key to power it.
+const ASK_ENABLED = false;
 type Tab = 'breakdown' | 'calendar' | 'report';
 
 const shift = (m: string, d: number) => { const dt = new Date(parseInt(m.slice(0, 4), 10), parseInt(m.slice(5, 7), 10) - 1 + d, 1); return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}`; };
@@ -40,7 +42,7 @@ export function ReflectScreen() {
     <ScrollView style={s.fill} contentContainerStyle={[s.content, { paddingTop: insets.top + 8, paddingBottom: 130 }]} showsVerticalScrollIndicator={false}>
       <PillBar left={<Text style={s.title} accessibilityRole="header">Reflect</Text>} right={picker} />
       <Block><Segmented value={tab} onChange={setTab} options={[{ value: 'breakdown', label: 'Breakdown' }, { value: 'calendar', label: 'Calendar' }, { value: 'report', label: 'Report' }]} /></Block>
-      {st.pro !== false ? <Block><Button title="Ask xypa" variant="chip" onPress={() => nav.push({ name: 'ask' })} accessibilityLabel="Ask xypa about your spending" /></Block> : null}
+      {ASK_ENABLED && st.pro !== false ? <Block><Button title="Ask xypa" variant="chip" onPress={() => nav.push({ name: 'ask' })} accessibilityLabel="Ask xypa about your spending" /></Block> : null}
       {tab === 'breakdown' ? <Breakdown month={month} /> : tab === 'calendar' ? <CalendarView month={month} /> : <Report month={month} />}
     </ScrollView>
   );

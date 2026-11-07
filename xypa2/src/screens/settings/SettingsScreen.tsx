@@ -60,6 +60,7 @@ export function SettingsScreen() {
           <Row label="Gmail" value={st.profile?.email ? 'Connect' : 'Sign in with Google'} onPress={connect} />
         )}
         {msg ? <Text style={s.hint} accessibilityLiveRegion="polite">{msg}</Text> : null}
+        <Row label="Add a bank statement" onPress={() => nav.push({ name: 'importStatement' })} />
         <InnerCard style={s.row}><Text style={s.label}>Merchant rules</Text><Text style={s.value}>{st.rules.length} {st.rules.length === 1 ? 'rule' : 'rules'}</Text></InnerCard>
       </Block>
       <Block padding={false} style={s.block}>
@@ -74,11 +75,6 @@ export function SettingsScreen() {
         <Toggle label="New transactions to sort" value={n.newTxns} onChange={(v) => st.setNotify('newTxns', v)} />
         <Toggle label="Morning safe-to-spend" value={n.morning} onChange={(v) => st.setNotify('morning', v)} />
         <Text style={s.hint}>Your choices are saved. Alerts themselves start working once notifications are switched on.</Text>
-      </Block>
-      <Block padding={false} style={s.block}>
-        <Title t="XYPA ASSISTANT (PRO)" />
-        <Toggle label="Ask xypa (Pro preview)" value={st.pro !== false} onChange={st.setPro} />
-        <Text style={s.hint}>Pro is switched on for you while it's being tested. Ask xypa only reads your numbers. It never moves money.</Text>
       </Block>
       <Block padding={false} style={s.block}>
         <Title t="SETUP" />
