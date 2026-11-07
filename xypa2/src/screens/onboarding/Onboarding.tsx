@@ -28,6 +28,7 @@ export function Onboarding() {
   const [found, setFound] = useState<Found[]>([]);
   const [authMsg, setAuthMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [statementBack, setStatementBack] = useState<Step>('noEmails');
   const set = (p: Partial<Draft>) => setDraft((d) => ({ ...d, ...p }));
   const n = ORDER.indexOf(step as Step) + 1;
   const back = () => setStep(ORDER[Math.max(0, ORDER.indexOf(step) - 1)] ?? 'hello');
@@ -57,11 +58,11 @@ export function Onboarding() {
 
   if (step === 'hello') return <Hello onStart={signIn} busy={busy} message={authMsg} />;
   if (step === 'reading') return <Reading onDone={useFound} onFail={() => setStep('accounts')} />;
-  if (step === 'noEmails') return <NoEmails onBack={() => setStep('intro')} onStatement={() => setStep('statement')} onAlerts={() => setStep('alerts')} onManual={() => setStep('accounts')} onOtherAccount={otherAccount} />;
-  if (step === 'statement') return <StatementStep onBack={() => setStep('noEmails')} onRead={useFound} />;
+  if (step === 'noEmails') return <NoEmails onBack={() => setStep('intro')} onStatement={() => { setStatementBack('noEmails'); setStep('statement'); }} onAlerts={() => setStep('alerts')} onManual={() => setStep('accounts')} onOtherAccount={otherAccount} />;
+  if (step === 'statement') return <StatementStep onBack={() => setStep(statementBack)} onRead={useFound} />;
   if (step === 'alerts') return <EmailAlerts onBack={() => setStep('noEmails')} onStatement={() => setStep('statement')} onManual={() => setStep('accounts')} />;
   if (step === 'ready') return <Ready draft={draft} assigned={assigned} onOpen={() => { const plan = buildPlan(draft, assigned); st.completeOnboarding({ ...plan, txns: txnsFromScan(found, plan.envelopes, plan.accounts, st.today.month) }); }} onRestart={() => { setDraft(emptyDraft()); setAssigned({}); setFound([]); setStep('hello'); }} />;
-  if (step === 'intro') return <Intro onBack={() => setStep('hello')} onManual={() => { setFound([]); setStep('accounts'); }} onAllow={allowGmail} busy={busy} message={authMsg} />;
+  if (step === 'intro') return <Intro onBack={() => setStep('hello')} onManual={() => { setFound([]); setStep('accounts'); }} onStatement={() => { setStatementBack('intro'); setStep('statement'); }} onAllow={allowGmail} busy={busy} message={authMsg} />;
   if (step === 'accounts') return <Accounts n={n} draft={draft} set={set} onBack={back} onNext={next} />;
   if (step === 'regular') return <Regular n={n} draft={draft} set={set} onBack={back} onNext={next} />;
   if (step === 'usual') return <Usual n={n} draft={draft} set={set} onBack={back} onNext={next} />;
@@ -102,12 +103,13 @@ function EnvCard({ style, label, value, red }: { style: object; label: string; v
 }
 
 /* ---------- Step 1 ---------- */
-function Intro({ onBack, onManual, onAllow, busy, message }: { onBack: () => void; onManual: () => void; onAllow: () => void; busy: boolean; message: string | null }) {
+function Intro({ onBack, onManual, onStatement, onAllow, busy, message }: { onBack: () => void; onManual: () => void; onStatement: () => void; onAllow: () => void; busy: boolean; message: string | null }) {
   return (
     <StepFrame step={1} title="Let your bank emails do the typing" subtitle="xypa can read the payment emails your bank already sends and sort them for you." onBack={onBack}
       footer={<>
         <BigButton title="Allow Gmail access" disabled={busy} onPress={onAllow} />
         {message ? <Text style={s.soon} accessibilityLiveRegion="polite">{message}</Text> : <Text style={s.soon}>Read only. Bank senders only.</Text>}
+        <Pressable accessibilityRole="button" accessibilityLabel="Upload a statement instead" onPress={onStatement} style={s.link}><Text style={s.linkText}>Upload a statement instead</Text></Pressable>
         <Pressable accessibilityRole="button" accessibilityLabel="I'll set things up myself" onPress={onManual} style={s.link}><Text style={s.linkText}>I'll set things up myself</Text></Pressable>
       </>}>
       <SectionHead title="XYPA CAN" />
