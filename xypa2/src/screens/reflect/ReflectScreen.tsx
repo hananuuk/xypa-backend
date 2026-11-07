@@ -55,7 +55,10 @@ function Breakdown({ month }: { month: string }) {
   const total = rows.reduce((a, e) => a + e.spent, 0);
   const max = rows[0]?.spent ?? 1;
   const byM: Record<string, { total: number; count: number }> = {};
-  for (const t of st.txns) if (t.type === 'spend' && t.date.startsWith(month)) { const e = (byM[t.merchant] ??= { total: 0, count: 0 }); e.total += t.amount; e.count += 1; }
+  for (const t of st.txns) if (t.type === 'spend' && !t.kind && t.date.startsWith(month)) { const e = (byM[t.merchant] ??= { total: 0, count: 0 }); e.total += t.amount; e.count += 1; }
+  const sentTo: Record<string, { total: number; count: number }> = {};
+  for (const t of st.txns) if (t.type === 'spend' && t.kind === 'person' && t.date.startsWith(month)) { const e = (sentTo[t.merchant] ??= { total: 0, count: 0 }); e.total += t.amount; e.count += 1; }
+  const people = Object.entries(sentTo).map(([name, v]) => ({ name, ...v })).sort((a, b) => b.total - a.total).slice(0, 8);
   const merchants = Object.entries(byM).map(([name, v]) => ({ name, ...v })).sort((a, b) => b.total - a.total).slice(0, 5);
   return (
     <Block>
@@ -75,6 +78,17 @@ function Breakdown({ month }: { month: string }) {
           {merchants.map((m, i) => (
             <Pressable key={m.name} style={s.row} accessibilityRole="button" onPress={() => nav.push({ name: 'txnList', title: m.name, month, merchant: m.name })} accessibilityLabel={`${i + 1}. ${m.name}, ${formatMoney(m.total)}, ${m.count} ${m.count === 1 ? 'time' : 'times'}. See transactions`}>
               <View style={{ flex: 1 }}><Text style={s.name} numberOfLines={1}>{i + 1}. {m.name}</Text><Text style={s.label}>{m.count} {m.count === 1 ? 'purchase' : 'purchases'}</Text></View>
+              <Money value={m.total} style={s.amt} />
+            </Pressable>
+          ))}
+        </View>
+      ) : null}
+      {people.length ? (
+        <View style={{ marginTop: 22, gap: 12 }}>
+          <Text style={s.label}>Sent to people (not purchases)</Text>
+          {people.map((m) => (
+            <Pressable key={m.name} style={s.row} accessibilityRole="button" onPress={() => nav.push({ name: 'txnList', title: m.name, month, merchant: m.name })} accessibilityLabel={`${m.name}, ${formatMoney(m.total)}, ${m.count} ${m.count === 1 ? 'time' : 'times'}. See transactions`}>
+              <View style={{ flex: 1 }}><Text style={s.name} numberOfLines={1}>{m.name}</Text><Text style={s.label}>{m.count} {m.count === 1 ? 'transfer' : 'transfers'}</Text></View>
               <Money value={m.total} style={s.amt} />
             </Pressable>
           ))}
@@ -125,7 +139,7 @@ const Legend = ({ color, text }: { color: string; text: string }) => (<View styl
 
 function Report({ month }: { month: string }) {
   const st = useStore();
-  const sum = (m: string, type: 'spend' | 'income') => st.txns.filter((t) => t.type === type && t.date.startsWith(m)).reduce((a, t) => a + t.amount, 0);
+  const sum = (m: string, type: 'spend' | 'income') => st.txns.filter((t) => t.type === type && t.kind !== 'own' && t.date.startsWith(m)).reduce((a, t) => a + t.amount, 0);
   const months = [-4, -3, -2, -1, 0].map((d) => shift(month, d));
   const vals = months.map((m) => sum(m, 'spend'));
   const max = Math.max(...vals, 1);

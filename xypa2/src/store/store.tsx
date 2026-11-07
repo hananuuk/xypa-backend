@@ -114,7 +114,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const views = useMemo(() => viewEnvelopes(state.envelopes, state.txns, month), [state.envelopes, state.txns, month]);
   const rta = useMemo(() => readyToAssign(state.accounts, views, state.goals), [state.accounts, views, state.goals]);
   const safe = useMemo(() => safeToSpend(everydayLeft(views), today.day, today.monthDays, today.weekday), [views, today]);
-  const unsorted = useMemo(() => state.txns.filter((t) => t.envelopeId === null), [state.txns]);
+  const unsorted = useMemo(() => state.txns.filter((t) => t.envelopeId === null && t.kind !== 'own'), [state.txns]);
 
   const store: Store = {
     ...state, ready, today, month, views, rta, safe, unsorted, toast,

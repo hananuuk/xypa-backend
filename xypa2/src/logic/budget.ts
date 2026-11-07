@@ -188,7 +188,7 @@ export const goalReached = (g: Goal) => g.saved >= g.target;
 export function spentByDay(txns: Txn[], month: string): Record<number, number> {
   const out: Record<number, number> = {};
   for (const t of txns) {
-    if (t.type === 'spend' && t.date.startsWith(month)) out[parseInt(t.date.slice(8, 10), 10)] = (out[parseInt(t.date.slice(8, 10), 10)] ?? 0) + t.amount;
+    if (t.type === 'spend' && t.kind !== 'own' && t.date.startsWith(month)) out[parseInt(t.date.slice(8, 10), 10)] = (out[parseInt(t.date.slice(8, 10), 10)] ?? 0) + t.amount;
   }
   return out;
 }

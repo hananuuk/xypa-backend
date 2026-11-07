@@ -13,7 +13,7 @@ export function TxnListScreen({ title, month, envelopeId, merchant }: { title: s
   const st = useStore();
   const nav = useNav();
   const rows = st.txns
-    .filter((t) => t.type === 'spend' && t.date.startsWith(month) && (envelopeId ? t.envelopeId === envelopeId : t.merchant === merchant))
+    .filter((t) => t.type === 'spend' && t.kind !== 'own' && t.date.startsWith(month) && (envelopeId ? t.envelopeId === envelopeId : t.merchant === merchant))
     .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
   const total = rows.reduce((a, t) => a + t.amount, 0);
   const envName = (id: string | null) => st.envelopes.find((e) => e.id === id)?.name ?? 'Not sorted yet';

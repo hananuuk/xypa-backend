@@ -1,5 +1,5 @@
 import { autoFile } from './budget';
-import { detectAccounts, Found, txnsFromScan } from './scan';
+import { detectAccounts, Found, linkOwnTransfers, txnsFromScan } from './scan';
 import type { Account, Envelope, MerchantRule, Txn } from './types';
 
 export type ImportResult = {
@@ -32,8 +32,10 @@ export function planImport(found: Found[], accounts: Account[], envelopes: Envel
     if (n > 0) { have.set(k, n - 1); duplicates += 1; } else add.push(t);
   }
   const filed = autoFile(add, rules);
+  const linked = linkOwnTransfers([...txns, ...filed]);
+  const ownIds = new Set(linked.filter((t) => t.kind === 'own').map((t) => t.id));
   return {
-    accounts: merged, txns: [...txns, ...filed],
-    added: filed.length, duplicates, unsorted: filed.filter((t) => t.envelopeId === null).length, newAccounts,
+    accounts: merged, txns: linked,
+    added: filed.length, duplicates, unsorted: filed.filter((t) => t.envelopeId === null && !ownIds.has(t.id)).length, newAccounts,
   };
 }

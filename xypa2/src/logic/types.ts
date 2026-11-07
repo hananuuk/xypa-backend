@@ -25,6 +25,8 @@ export type Txn = {
   date: string;
   accountId: string;
   source: 'gmail' | 'statement' | 'manual';
+  /** 'own' = moved between your own accounts (not spending or income); 'person' = money sent to or received from someone, not a purchase. */
+  kind?: 'own' | 'person';
 };
 
 export type AccountKind = 'Checking' | 'Wallet' | 'Credit' | 'Savings' | 'Loan';

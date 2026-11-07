@@ -13,7 +13,7 @@ const monthOf = (d: string) => d.slice(0, 7);
 
 /** Plain-text snapshot of the user's own numbers. Sent with each question so answers are grounded in real data. */
 export function buildAskContext(i: AskInput): string {
-  const spend = i.txns.filter((t) => t.type === 'spend');
+  const spend = i.txns.filter((t) => t.type === 'spend' && t.kind !== 'own');
   const months = [...new Set(spend.map((t) => monthOf(t.date)))].sort().slice(-4);
   const lines: string[] = [`Today: ${i.today}. Current month: ${i.month}. Currency: ${i.currency}.`];
   lines.push(`Ready to assign: ${formatMoney(i.readyToAssign)}. Safe to spend today: ${formatMoney(i.safeToSpend)}.`);

@@ -63,7 +63,7 @@ describe('real statement layouts', () => {
     expect(r.meta.account).toBe('8000000001');
     expect(r.found).toHaveLength(4);
     expect(r.found[0]).toMatchObject({ merchant: 'TLJ CENTRAL', amount: 21500, type: 'spend', card: '4207********1728', date: '2026-08-09', balance: 518834 });
-    expect(r.found[1]).toMatchObject({ merchant: 'Transfer', type: 'income', amount: 25000 });
+    expect(r.found[1]).toMatchObject({ merchant: 'From Анунгоо', transfer: 'person', type: 'income', amount: 25000 });
     expect(r.found[2]).toMatchObject({ merchant: 'Bank fee', amount: 250, type: 'spend' });
     expect(r.found[3].merchant).toMatch(/^qpay/i);
     const out = r.found.filter((f) => f.type === 'spend').reduce((a, f) => a + f.amount, 0);
@@ -72,7 +72,7 @@ describe('real statement layouts', () => {
   it('reads Golomt rows with wrapped lines and card prefixes', () => {
     const r = parseGolomtStatement(golomt);
     expect(r.meta.account).toBe('1600000002');
-    expect(r.found.map((f) => [f.merchant, f.amount, f.type])).toEqual([['Transfer', 300000, 'income'], ['SocialPay', 70000, 'spend'], ['UB CITY B', 1000, 'spend'], ['Bank fee', 200, 'spend']]);
+    expect(r.found.map((f) => [f.merchant, f.amount, f.type])).toEqual([['Between your accounts', 300000, 'income'], ['SocialPay', 70000, 'spend'], ['UB CITY B', 1000, 'spend'], ['Bank fee', 200, 'spend']]);
     expect(r.found[2].card).toBe('522893******0028');
     expect(r.found[2].balance).toBe(6240);
   });

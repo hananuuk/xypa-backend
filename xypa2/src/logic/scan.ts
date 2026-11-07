@@ -7,6 +7,10 @@ import { emptyDraft } from './onboarding';
 export type Found = {
   bank: string | null; card: string | null; merchant: string; amount: number;
   type: 'spend' | 'income'; date: string | null; balance: number | null; source?: 'gmail' | 'statement'; gmailId?: string; account?: string;
+  /** Set for bank transfers: 'own' when it clearly names the owner, otherwise 'person' (may be upgraded by pairing). */
+  transfer?: 'own' | 'person';
+  /** Last 8 digits of the other side's account on a transfer, when the statement prints it. */
+  counterparty?: string;
 };
 
 export const normalizeMerchant = (m: string) =>
@@ -107,15 +111,34 @@ export function txnsFromScan(found: Found[], envelopes: Envelope[], accounts: Ac
   const byId = new Set(envelopes.map((e) => e.id));
   const bankId = (bank: string | null, account?: string) =>
     accounts.find((a) => a.name === (bank ?? 'Bank account') || (account && a.name === `${bank} ··${account.slice(-4)}`))?.id ?? accounts[0]?.id ?? 'cash';
-  return found.flatMap((f, i): Txn[] => {
+  // A transfer to an account number that is one of yours is you moving money.
+  const mine = new Set([...found.map((f) => f.account), ...accounts.map((a) => a.id.match(/\d{8,}/)?.[0])].filter((n): n is string => !!n));
+  const isMine = (cp?: string) => !!cp && [...mine].some((n) => n.endsWith(cp));
+  const all = found.flatMap((f, i): Txn[] => {
     if (!f.date || f.amount <= 0) return [];
+    const date = f.date;
+    if (f.transfer === 'person' && isMine(f.counterparty)) f = { ...f, transfer: 'own', merchant: 'Between your accounts' };
     let envelopeId: string | null = null;
-    if (f.type === 'spend') {
+    if (f.type === 'spend' && !f.transfer) {
       const reg = `reg-${normalizeMerchant(f.merchant).toLowerCase().replace(/ /g, '-')}`;
       envelopeId = byId.has(reg) ? reg : byName.get(categoryOf(f.merchant).toLowerCase()) ?? null;
     }
-    // Older months already shaped the averages; only keep them if they landed in an envelope, so Review isn't flooded.
-    if (month && f.date.slice(0, 7) < month && envelopeId === null) return [];
-    return [{ id: f.gmailId ? `g-${f.gmailId}` : `s-${i}-${f.date}-${f.amount}`, envelopeId, merchant: f.merchant, amount: f.amount, type: f.type, date: f.date, accountId: bankId(f.bank, f.account), source: f.source ?? 'gmail' }];
+    return [{ id: f.gmailId ? `g-${f.gmailId}` : `s-${i}-${date}-${f.amount}`, envelopeId, merchant: f.merchant, amount: f.amount, type: f.type, date, accountId: bankId(f.bank, f.account), source: f.source ?? 'gmail', ...(f.transfer ? { kind: f.transfer } : {}) }];
   });
+  // Older months already shaped the averages; only keep them if they landed in an envelope (or are your own money moving), so Review isn't flooded.
+  return linkOwnTransfers(all).filter((t) => !(month && t.date.slice(0, 7) < month && t.envelopeId === null && t.kind !== 'own'));
+}
+
+/** Money that left one of your accounts and arrived in another the same day (or next) is you moving money, not spending. */
+export function linkOwnTransfers(txns: Txn[]): Txn[] {
+  const out = txns.map((t) => ({ ...t }));
+  const day = (d: string) => Math.round(Date.parse(d) / 86400000);
+  const outs = out.filter((t) => t.kind === 'person' && t.type === 'spend');
+  const ins = out.filter((t) => t.kind === 'person' && t.type === 'income');
+  const used = new Set<string>();
+  for (const o of outs) {
+    const m = ins.find((i) => !used.has(i.id) && i.amount === o.amount && i.accountId !== o.accountId && Math.abs(day(i.date) - day(o.date)) <= 1);
+    if (m) { used.add(m.id); o.kind = 'own'; m.kind = 'own'; o.merchant = 'Between your accounts'; m.merchant = 'Between your accounts'; }
+  }
+  return out;
 }
