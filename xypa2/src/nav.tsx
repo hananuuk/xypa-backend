@@ -8,7 +8,8 @@ export type Route =
   | { name: 'goal'; id: string }
   | { name: 'account'; id: string }
   | { name: 'editHome' }
-  | { name: 'newMonth' };
+  | { name: 'newMonth' }
+  | { name: 'settings' };
 
 /** Bottom sheets opened from anywhere. */
 export type Sheet =
@@ -23,7 +24,11 @@ export type Sheet =
   | { name: 'addAccount' }
   | { name: 'day'; day: number }
   | { name: 'fixSync'; id: string }
-  | { name: 'confirmDeleteGoal'; id: string };
+  | { name: 'confirmDeleteGoal'; id: string }
+  | { name: 'currency' }
+  | { name: 'language' }
+  | { name: 'editName' }
+  | { name: 'confirmLogOut' };
 
 export type Nav = {
   push: (r: Route) => void;

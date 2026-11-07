@@ -23,6 +23,7 @@ export function AccountsScreen() {
       <PillBar left={<Text style={s.title} accessibilityRole="header">Accounts</Text>}
         right={<>
           <IconButton label={hidden ? 'Show amounts' : 'Hide amounts'} onPress={() => st.setHideAmounts(!st.hideAmounts)}><Icon name={hidden ? 'eyeOff' : 'eye'} size={20} /></IconButton>
+          <IconButton label="Settings" onPress={() => nav.push({ name: 'settings' })}><Icon name="settings" size={20} /></IconButton>
           <IconButton label="Add account" onPress={() => nav.openSheet({ name: 'addAccount' })}><Icon name="plus" size={20} /></IconButton>
         </>} />
       <Block>
@@ -44,9 +45,6 @@ export function AccountsScreen() {
           </Pressable>
         ))}
       </Block>
-      <Pressable accessibilityRole="button" accessibilityLabel="Start setup again" onPress={st.startOnboarding} style={s.again}>
-        <Text style={s.label}>Start setup again</Text>
-      </Pressable>
     </ScrollView>
   );
 }
@@ -97,7 +95,6 @@ const s = StyleSheet.create({
   avatarText: { fontFamily: font.medium, fontSize: 14, color: colors.ink2 },
   name: { fontFamily: font.regular, fontSize: 16, color: colors.ink },
   amt: { fontFamily: font.medium, fontSize: 17, color: colors.ink },
-  again: { alignItems: 'center', justifyContent: 'center', minHeight: 48, marginTop: 8 },
   fix: { fontFamily: font.regular, fontSize: 13, color: colors.accent, minHeight: 28, lineHeight: 28 },
   btns: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
 });

@@ -4,6 +4,7 @@ import {
   applyCover, autoFile, normalizeCover, readyToAssign, refile, viewEnvelopes, everydayLeft, safeToSpend, deleteGoal,
 } from '../logic/budget';
 import type { Account, CoverSource, Envelope, Goal, MerchantRule, Txn } from '../logic/types';
+import { CurrencyCode, setCurrency } from '../logic/money';
 import { getToday } from './calendar';
 import { seedAccounts, seedEnvelopes, seedGoals, seedRules, seedTxns } from './seed';
 
@@ -18,6 +19,10 @@ export type Persisted = {
   checklist: Checklist; envView: 'list' | 'grid';
   /** Missing (older saves) counts as onboarded; false means show onboarding. */
   onboarded?: boolean;
+  profile?: { name: string };
+  currency?: CurrencyCode;
+  language?: 'en' | 'mn';
+  notify?: { overspend: boolean; newTxns: boolean; morning: boolean };
 };
 
 const defaults = (): Persisted => ({
@@ -54,6 +59,11 @@ type Store = Persisted & {
   addAccount: (a: Pick<Account, 'name' | 'kind' | 'balance'>) => void;
   setHomeLayout: (order: HomeCard[], hidden: Partial<Record<HomeCard, boolean>>) => void;
   startOnboarding: () => void;
+  setProfileName: (name: string) => void;
+  setCurrencyCode: (c: CurrencyCode) => void;
+  setLanguage: (l: 'en' | 'mn') => void;
+  setNotify: (k: 'overspend' | 'newTxns' | 'morning', v: boolean) => void;
+  logOut: () => void;
   completeOnboarding: (plan: { accounts: Account[]; envelopes: Envelope[] }) => void;
 };
 
@@ -91,6 +101,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setState((cur) => { const next = fn(cur); showToast(message, cur); return next; });
   }, [showToast]);
 
+  setCurrency(state.currency ?? 'MNT');
   const month = today.month;
   const views = useMemo(() => viewEnvelopes(state.envelopes, state.txns, month), [state.envelopes, state.txns, month]);
   const rta = useMemo(() => readyToAssign(state.accounts, views, state.goals), [state.accounts, views, state.goals]);
@@ -135,6 +146,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     addGoal: (g) => change(`${g.name} added`, (s) => ({ ...s, goals: [...s.goals, { ...g, id: `goal-${Date.now()}`, saved: 0, addedThisMonth: 0 }] })),
     fixBalance: (accountId, balance) => change('Balance updated', (s) => ({ ...s, accounts: s.accounts.map((a) => (a.id === accountId ? { ...a, balance, syncOk: true } : a)) })),
     addAccount: (a) => change(`${a.name} added`, (s) => ({ ...s, accounts: [...s.accounts, { ...a, id: `acc-${Date.now()}`, syncOk: true }] })),
+    setProfileName: (name) => setState((s) => ({ ...s, profile: { name } })),
+    setCurrencyCode: (c) => setState((s) => ({ ...s, currency: c })),
+    setLanguage: (l) => setState((s) => ({ ...s, language: l })),
+    setNotify: (k, v) => setState((s) => ({ ...s, notify: { overspend: true, newTxns: true, morning: false, ...s.notify, [k]: v } })),
+    logOut: () => { setToast(null); setState({ ...defaults(), onboarded: false }); },
     startOnboarding: () => setState((s) => ({ ...s, onboarded: false })),
     completeOnboarding: (plan) => setState((s) => ({
       ...s, accounts: plan.accounts, envelopes: plan.envelopes, txns: [], goals: [], rules: [],

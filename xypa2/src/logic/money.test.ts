@@ -22,3 +22,14 @@ describe('parseMoney', () => {
     expect(parseMoney('')).toBe(0);
   });
 });
+
+import { setCurrency } from './money';
+describe('currency symbol', () => {
+  it('switches symbol and position, then restores', () => {
+    setCurrency('USD');
+    expect(formatMoney(1200000)).toBe('$1,200,000');
+    expect(formatMoney(5, { hidden: true })).toBe('$••••');
+    setCurrency('MNT');
+    expect(formatMoney(-36200)).toBe('−36,200₮');
+  });
+});

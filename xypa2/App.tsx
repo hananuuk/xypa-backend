@@ -15,6 +15,7 @@ import { NewMonthScreen } from './src/screens/month/NewMonthScreen';
 import { EnvelopeDetail } from './src/screens/envelope/EnvelopeDetail';
 import { GoalDetail, GoalsScreen } from './src/screens/goals/GoalsScreen';
 import { Onboarding } from './src/screens/onboarding/Onboarding';
+import { SettingsScreen } from './src/screens/settings/SettingsScreen';
 import { PlanScreen } from './src/screens/plan/PlanScreen';
 import { ReflectScreen } from './src/screens/reflect/ReflectScreen';
 import { ReviewScreen } from './src/screens/review/ReviewScreen';
@@ -23,6 +24,7 @@ import { AddAccountSheet, DaySheet, FixSyncSheet } from './src/sheets/AccountShe
 import { CoverSheet } from './src/sheets/CoverSheet';
 import { AddGoalMoneySheet, ConfirmDeleteGoalSheet, NewGoalSheet } from './src/sheets/GoalSheets';
 import { MonthPickerSheet, MoveInSheet, NewEnvelopeSheet, SafeExplainSheet } from './src/sheets/SmallSheets';
+import { ConfirmLogOutSheet, CurrencySheet, EditNameSheet, LanguageSheet } from './src/sheets/SettingsSheets';
 import { StoreProvider, useStore } from './src/store/store';
 
 function Shell() {
@@ -61,6 +63,7 @@ function Shell() {
       case 'account': return <AccountDetail id={r.id} />;
       case 'editHome': return <EditHomeScreen />;
       case 'newMonth': return <NewMonthScreen />;
+      case 'settings': return <SettingsScreen />;
     }
   };
 
@@ -77,6 +80,10 @@ function Shell() {
       case 'addAccount': return <AddAccountSheet onClose={close} />;
       case 'day': return <DaySheet day={s.day} onClose={close} />;
       case 'fixSync': return <FixSyncSheet id={s.id} onClose={close} />;
+      case 'currency': return <CurrencySheet onClose={close} />;
+      case 'language': return <LanguageSheet onClose={close} />;
+      case 'editName': return <EditNameSheet onClose={close} />;
+      case 'confirmLogOut': return <ConfirmLogOutSheet onClose={close} />;
       case 'confirmDeleteGoal': return <ConfirmDeleteGoalSheet id={s.id} onClose={close} onDeleted={() => { close(); back(); }} />;
     }
   };
