@@ -1,4 +1,5 @@
 export const mn: Record<string, string> = {
+  "Change the amount": "Дүнг өөрчлөх",
   "Unit": "Нэгж",
   "thousand": "мянга",
   "hundred thousand": "зуун мянга",
