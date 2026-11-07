@@ -1,6 +1,5 @@
 const test = require('node:test');
 const assert = require('node:assert');
-const { PDFParse } = require('pdf-parse');
 
 // Smallest valid one-line PDF, built by hand so the test needs no fixtures.
 function tinyPdf(text) {
@@ -17,7 +16,7 @@ function tinyPdf(text) {
 }
 
 test('pdf text comes back as lines', async () => {
-  const p = new PDFParse({ data: new Uint8Array(tinyPdf('2026-11-02 NOMIN 48,600.00 3,451,400.00')) });
-  const r = await p.getText(); await p.destroy();
+  const { extractText, getDocumentProxy } = await import('unpdf');
+  const r = await extractText(await getDocumentProxy(new Uint8Array(tinyPdf('2026-11-02 NOMIN 48,600.00 3,451,400.00'))), { mergePages: true });
   assert.match(r.text, /NOMIN 48,600\.00 3,451,400\.00/);
 });
