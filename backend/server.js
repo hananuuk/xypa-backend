@@ -5,6 +5,8 @@ const { Pool } = require('pg');
 
 const app = express();
 app.use(cors());
+// Statement PDFs arrive as base64, so that one route gets a bigger body limit (must be registered first).
+app.use('/v2/statement', express.json({ limit: '6mb' }));
 app.use(express.json());
 
 // ---------------------------------------------------------------------------

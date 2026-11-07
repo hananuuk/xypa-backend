@@ -66,3 +66,5 @@ export async function scanGmail(onProgress: (p: ScanProgress) => void): Promise<
   }
   return out;
 }
+
+export const pdfToText = (pdfBase64: string) => call<{ text: string }>('/v2/statement/pdf', { method: 'POST', body: JSON.stringify({ pdf: pdfBase64 }) });

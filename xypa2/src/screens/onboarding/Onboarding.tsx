@@ -12,6 +12,7 @@ import {
 import { monthlySaving } from '../../logic/budget';
 import { draftFromScan, Found, txnsFromScan } from '../../logic/scan';
 import { useStore } from '../../store/store';
+import { StatementStep } from './StatementStep';
 import { EmailAlerts, NoEmails, Reading } from './GmailSteps';
 import { AmountInput, BigButton, CostFooter, DashedAdd, ob, Poster, SectionHead, StepFrame, Switch } from './ui';
 
@@ -57,6 +58,7 @@ export function Onboarding() {
   if (step === 'hello') return <Hello onStart={signIn} busy={busy} message={authMsg} />;
   if (step === 'reading') return <Reading onDone={useFound} onFail={() => setStep('accounts')} />;
   if (step === 'noEmails') return <NoEmails onBack={() => setStep('intro')} onStatement={() => setStep('statement')} onAlerts={() => setStep('alerts')} onManual={() => setStep('accounts')} onOtherAccount={otherAccount} />;
+  if (step === 'statement') return <StatementStep onBack={() => setStep('noEmails')} onRead={useFound} />;
   if (step === 'alerts') return <EmailAlerts onBack={() => setStep('noEmails')} onStatement={() => setStep('statement')} onManual={() => setStep('accounts')} />;
   if (step === 'ready') return <Ready draft={draft} assigned={assigned} onOpen={() => { const plan = buildPlan(draft, assigned); st.completeOnboarding({ ...plan, txns: txnsFromScan(found, plan.envelopes, plan.accounts) }); }} onRestart={() => { setDraft(emptyDraft()); setAssigned({}); setFound([]); setStep('hello'); }} />;
   if (step === 'intro') return <Intro onBack={() => setStep('hello')} onManual={() => { setFound([]); setStep('accounts'); }} onAllow={allowGmail} busy={busy} message={authMsg} />;

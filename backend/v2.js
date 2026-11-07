@@ -150,6 +150,17 @@ function mount(app, { pool }) {
     res.json({ ok: true });
   }));
 
+  // PDF statements: the phone sends the file, we hand back plain text lines; the app does the reading.
+  app.post('/v2/statement/pdf', authed(async (req, res) => {
+    const b = (req.body || {}).pdf;
+    if (typeof b !== 'string' || b.length < 100) return res.status(400).json({ error: 'No file received.' });
+    const buf = Buffer.from(b, 'base64');
+    if (buf.slice(0, 4).toString() !== '%PDF') return res.status(400).json({ error: 'That does not look like a PDF.' });
+    const { PDFParse } = require('pdf-parse');
+    const parser = new PDFParse({ data: new Uint8Array(buf) });
+    try { res.json({ text: (await parser.getText()).text || '' }); } finally { await parser.destroy(); }
+  }));
+
   // Scanning is split into small calls (list ids, then parse batches) so each one stays well inside serverless time limits.
   app.get('/v2/scan/ids', authed(async (req, res) => {
     const gmail = gmailFor(req.user);

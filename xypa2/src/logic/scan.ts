@@ -23,7 +23,7 @@ export function detectAccounts(found: Found[]): DraftAccount[] {
   for (const f of found) { const k = f.bank ?? 'Bank account'; by.set(k, [...(by.get(k) ?? []), f]); }
   return [...by.entries()].map(([bank, rows]) => {
     const withBal = rows.filter((r) => r.balance !== null && r.date).sort((a, b) => (a.date! < b.date! ? 1 : -1));
-    return { id: `bank-${normalizeMerchant(bank).toLowerCase().replace(/ /g, '-') || 'x'}`, name: bank, kind: 'Checking' as const, balance: withBal[0]?.balance ?? 0, note: 'From your emails' };
+    return { id: `bank-${normalizeMerchant(bank).toLowerCase().replace(/ /g, '-') || 'x'}`, name: bank, kind: 'Checking' as const, balance: withBal[0]?.balance ?? 0, note: rows.every((r) => r.source === 'statement') ? 'From your statement' : 'From your emails' };
   });
 }
 
