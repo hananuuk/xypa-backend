@@ -4,7 +4,7 @@ import * as Haptics from 'expo-haptics';
 import { font } from './tokens';
 
 /** Radius of the arc the values sit on, in rows. Exported so the screen can draw the matching disc. */
-export const WHEEL_RADIUS = 3.8;
+export const WHEEL_RADIUS = 4.5;
 const tick = () => { try { Haptics.selectionAsync(); } catch { /* no haptics on this device */ } };
 
 /**
