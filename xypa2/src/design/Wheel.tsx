@@ -3,6 +3,8 @@ import { Animated, FlatList, GestureResponderEvent, NativeScrollEvent, NativeSyn
 import * as Haptics from 'expo-haptics';
 import { font } from './tokens';
 
+/** Radius of the arc the values sit on, in rows. Exported so the screen can draw the matching disc. */
+export const WHEEL_RADIUS = 3.8;
 const tick = () => { try { Haptics.selectionAsync(); } catch { /* no haptics on this device */ } };
 
 /**
@@ -16,7 +18,7 @@ export function Wheel({ items, index, onIndex, width, itemHeight = 36, fontSize 
   const H = itemHeight;
   const SHOWN = rows;
   const half = (rows - 1) / 2;
-  const R = H * 3.8; // radius of the half circle the values sit on
+  const R = H * WHEEL_RADIUS; // radius of the half circle the values sit on
   const [live, setLive] = useState(index);
   const y = useRef(new Animated.Value(0)).current;
   const list = useRef<FlatList<string>>(null);
@@ -36,9 +38,13 @@ export function Wheel({ items, index, onIndex, width, itemHeight = 36, fontSize 
     if (i !== last.current) { last.current = i; ticked.current = i; tick(); onIndex(i); }
   };
 
-  const settle = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const i = clamp(Math.round(e.nativeEvent.contentOffset.y / H));
+  // Land exactly on a row, so the two wheels always read on one line.
+  const settle = (e: NativeSyntheticEvent<NativeScrollEvent>, drag = false) => {
+    const off = e.nativeEvent.contentOffset.y;
+    const i = clamp(Math.round(off / H));
     if (i !== last.current) { last.current = i; onIndex(i); }
+    const still = !drag || Math.abs(e.nativeEvent.velocity?.y ?? 0) < 0.05;
+    if (still && Math.abs(off - i * H) > 0.5) list.current?.scrollToOffset({ offset: i * H, animated: true });
   };
 
   const onScroll = Animated.event([{ nativeEvent: { contentOffset: { y } } }], {
@@ -66,7 +72,7 @@ export function Wheel({ items, index, onIndex, width, itemHeight = 36, fontSize 
         scrollEventThrottle={16}
         onScroll={onScroll}
         onMomentumScrollEnd={settle}
-        onScrollEndDrag={settle}
+        onScrollEndDrag={(e) => settle(e, true)}
         getItemLayout={(_, i) => ({ length: H, offset: H * (i + half), index: i })}
         ListHeaderComponent={<View style={{ height: H * half }} />}
         ListFooterComponent={<View style={{ height: H * half }} />}

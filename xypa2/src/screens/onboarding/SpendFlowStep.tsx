@@ -3,7 +3,8 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { tr } from '../../i18n';
 import { Text } from '../../design/Text';
 import { Icon } from '../../design/Icon';
-import { Wheel } from '../../design/Wheel';
+import Svg, { Circle } from 'react-native-svg';
+import { Wheel, WHEEL_RADIUS } from '../../design/Wheel';
 import { font } from '../../design/tokens';
 import { BigButton, ob, Poster } from './ui';
 
@@ -11,6 +12,9 @@ const NAVY = '#1B2A8A';
 const UNITS = [{ label: 'million', mult: 1_000_000, max: 100 }, { label: 'hundred thousand', mult: 100_000, max: 9 }, { label: 'thousand', mult: 1_000, max: 99 }];
 const range = (n: number) => Array.from({ length: n }, (_, i) => String(i + 1));
 const H = 54;
+const LW = 160, GAP = 10, RW = 180;
+const R = H * WHEEL_RADIUS;
+const BLEED = 2 * R;
 
 /** "Let's work out your money flow first." Two curved wheels: how many, and of what (million, hundred thousand, thousand). */
 export function SpendFlowStep({ onBack, onNext }: { onBack: () => void; onNext: (monthlySpend: number) => void }) {
@@ -27,8 +31,12 @@ export function SpendFlowStep({ onBack, onNext }: { onBack: () => void; onNext: 
       <Text style={s.ask}>How much do you spend in a month?</Text>
       <View style={s.mid}>
         <View style={s.wheels}>
-          <Wheel rows={7} curve="left" align="right" label={tr('Amount')} items={numbers} index={n - 1} onIndex={(i) => setNum(i + 1)} width={150} itemHeight={H} fontSize={38} color={NAVY} bold />
-          <Wheel rows={7} curve="right" align="left" bend={0.6} label={tr('Unit')} items={unitNames} index={unit} onIndex={(i) => { setUnit(i); setNum((v) => Math.min(v, UNITS[i].max)); }} width={180} itemHeight={H} fontSize={24} color={NAVY} bold />
+          <Svg pointerEvents="none" width={LW + GAP + RW + 2 * BLEED} height={2 * R} style={{ position: 'absolute', left: -BLEED, top: 3.5 * H - R }}>
+            <Circle cx={BLEED + LW + 4 - R} cy={R} r={R} fill="rgba(255,255,255,0.5)" />
+            <Circle cx={BLEED + LW + GAP - 4 + R} cy={R} r={R} fill="rgba(255,255,255,0.5)" />
+          </Svg>
+          <Wheel rows={7} curve="left" align="right" label={tr('Amount')} items={numbers} index={n - 1} onIndex={(i) => setNum(i + 1)} width={LW} bend={0.85} itemHeight={H} fontSize={44} color={NAVY} bold />
+          <Wheel rows={7} curve="right" align="left" bend={0.6} label={tr('Unit')} items={unitNames} index={unit} onIndex={(i) => { setUnit(i); setNum((v) => Math.min(v, UNITS[i].max)); }} width={RW} itemHeight={H} fontSize={26} color={NAVY} bold />
         </View>
       </View>
       <BigButton title="Continue" onPress={() => onNext(n * u.mult)} />
@@ -40,6 +48,6 @@ const s = StyleSheet.create({
   back: { width: 44, height: 44, alignItems: 'flex-start', justifyContent: 'center' },
   title: { fontFamily: font.medium, fontSize: 32, lineHeight: 38, letterSpacing: -1, color: ob.ink, marginTop: 8 },
   mid: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  wheels: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
+  wheels: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: GAP, width: LW + GAP + RW, height: 7 * H },
   ask: { fontFamily: font.regular, fontSize: 14, lineHeight: 20, color: ob.ink, opacity: 0.7, marginTop: 10 },
 });
