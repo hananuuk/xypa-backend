@@ -1,45 +1,79 @@
-import React, { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { Animated, LayoutAnimation, Pressable, StyleSheet, View } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { tr } from '../../i18n';
 import { Text } from '../../design/Text';
 import { Icon } from '../../design/Icon';
-import Svg, { Circle } from 'react-native-svg';
-import { Wheel, WHEEL_RADIUS } from '../../design/Wheel';
 import { font } from '../../design/tokens';
+import { groupDigits, pressKey, spokenParts } from '../../logic/amountInput';
 import { BigButton, ob, Poster } from './ui';
 
 const NAVY = '#1B2A8A';
-const UNITS = [{ label: 'million', mult: 1_000_000, max: 100 }, { label: 'hundred thousand', mult: 100_000, max: 9 }, { label: 'thousand', mult: 1_000, max: 99 }];
-const range = (n: number) => Array.from({ length: n }, (_, i) => String(i + 1));
-const H = 54;
-const LW = 120, GAP = 44, RW = 140;
-const R = H * WHEEL_RADIUS;
-const BLEED = 2 * R;
+const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'back'];
 
-/** "Let's work out your money flow first." Two curved wheels: how many, and of what (million, hundred thousand, thousand). */
+/** One character of the amount. It pops up from below when it first appears. */
+function Pop({ ch, size }: { ch: string; size: number }) {
+  const t = useRef(new Animated.Value(0)).current;
+  useEffect(() => { Animated.spring(t, { toValue: 1, useNativeDriver: true, speed: 18, bounciness: 8 }).start(); }, [t]);
+  return (
+    <Animated.Text style={{
+      fontFamily: font.bold, fontSize: size, lineHeight: size * 1.15, color: NAVY, fontVariant: ['tabular-nums'],
+      opacity: t.interpolate({ inputRange: [0, 0.6, 1], outputRange: [0, 1, 1] }),
+      transform: [{ translateY: t.interpolate({ inputRange: [0, 1], outputRange: [size * 0.6, 0] }) }, { scale: t.interpolate({ inputRange: [0, 1], outputRange: [0.8, 1] }) }],
+    }}>{ch}</Animated.Text>
+  );
+}
+
+/** Characters with stable keys: digit k keeps its identity as more digits are typed, a comma is new each time it moves. */
+function amountChars(digits: string): { key: string; ch: string }[] {
+  const out: { key: string; ch: string }[] = [];
+  for (let i = 0; i < digits.length; i++) {
+    out.push({ key: `d${i}`, ch: digits[i] });
+    const right = digits.length - 1 - i;
+    if (right > 0 && right % 3 === 0) out.push({ key: `c${i}`, ch: ',' });
+  }
+  return out;
+}
+
+/** "Let's work out your money flow first." Type what you spend in a month; the digits pop in as you type. */
 export function SpendFlowStep({ onBack, onNext }: { onBack: () => void; onNext: (monthlySpend: number) => void }) {
-  const [unit, setUnit] = useState(0);
-  const [num, setNum] = useState(2);
-  const u = UNITS[unit];
-  const n = Math.min(num, u.max);
-  const numbers = useMemo(() => range(u.max), [u.max]);
-  const unitNames = useMemo(() => UNITS.map((x) => tr(x.label)), []);
+  const [digits, setDigits] = useState('2000000');
+  const value = Number(digits || 0);
+  const chars = amountChars(digits);
+  const size = chars.length <= 7 ? 64 : chars.length <= 9 ? 54 : 46;
+  const { million, thousand, rest } = spokenParts(value);
+  const spoken = [million ? tr('{0} million', million) : '', thousand ? tr('{0} thousand', thousand) : '', rest && value >= 1000 ? String(rest) : ''].filter(Boolean).join(' ');
+
+  const press = (k: string) => {
+    const next = pressKey(digits, k);
+    if (next === digits) return;
+    try { Haptics.selectionAsync(); } catch { /* no haptics */ }
+    LayoutAnimation.configureNext({ duration: 170, update: { type: LayoutAnimation.Types.easeInEaseOut } });
+    setDigits(next);
+  };
+
   return (
     <Poster image={require('../../../assets/flow-bg.jpg')}>
       <Pressable accessibilityRole="button" accessibilityLabel={tr('Back')} onPress={onBack} style={s.back}><Icon name="chevronLeft" size={20} /></Pressable>
       <Text style={s.title} accessibilityRole="header">Let's work out your money flow first.</Text>
       <Text style={s.ask}>How much do you spend in a month?</Text>
       <View style={s.mid}>
-        <View style={s.wheels}>
-          <Svg pointerEvents="none" width={LW + GAP + RW + 2 * BLEED} height={2 * R} style={{ position: 'absolute', left: -BLEED, top: 3.5 * H - R }}>
-            <Circle cx={BLEED + LW + 12 - R} cy={R} r={R} fill="rgba(255,255,255,0.5)" />
-            <Circle cx={BLEED + LW + GAP - 12 + R} cy={R} r={R} fill="rgba(255,255,255,0.5)" />
-          </Svg>
-          <Wheel rows={7} curve="left" align="right" label={tr('Amount')} items={numbers} index={n - 1} onIndex={(i) => setNum(i + 1)} width={LW} itemHeight={H} fontSize={44} color={NAVY} bold />
-          <Wheel rows={7} curve="right" align="left" label={tr('Unit')} items={unitNames} index={unit} onIndex={(i) => { setUnit(i); setNum((v) => Math.min(v, UNITS[i].max)); }} width={RW} itemHeight={H} fontSize={26} color={NAVY} bold />
+        <View style={s.amount} accessible accessibilityLabel={tr('{0} tögrög a month', groupDigits(digits || '0'))} accessibilityLiveRegion="polite">
+          {chars.length ? chars.map((c) => <Pop key={c.key} ch={c.ch} size={size} />) : <Text style={[s.zero, { fontSize: size }]}>0</Text>}
+          <Text style={[s.tug, { fontSize: size * 0.5 }]}>₮</Text>
         </View>
+        <Text style={s.spoken}>{spoken || ' '}</Text>
       </View>
-      <BigButton title="Continue" onPress={() => onNext(n * u.mult)} />
+      <View style={s.pad}>
+        {KEYS.map((k, i) => k === '' ? <View key={i} style={s.key} /> : (
+          <Pressable key={k} accessibilityRole="button" accessibilityLabel={k === 'back' ? tr('Delete') : k} onPress={() => press(k)}
+            onLongPress={k === 'back' ? () => { LayoutAnimation.configureNext({ duration: 170, update: { type: LayoutAnimation.Types.easeInEaseOut } }); setDigits(''); } : undefined}
+            style={({ pressed }) => [s.key, pressed && s.keyDown]}>
+            {k === 'back' ? <Text style={s.keyText}>⌫</Text> : <Text style={s.keyText}>{k}</Text>}
+          </Pressable>
+        ))}
+      </View>
+      <BigButton title="Continue" disabled={value <= 0} onPress={() => onNext(value)} />
     </Poster>
   );
 }
@@ -47,7 +81,14 @@ export function SpendFlowStep({ onBack, onNext }: { onBack: () => void; onNext: 
 const s = StyleSheet.create({
   back: { width: 44, height: 44, alignItems: 'flex-start', justifyContent: 'center' },
   title: { fontFamily: font.medium, fontSize: 32, lineHeight: 38, letterSpacing: -1, color: ob.ink, marginTop: 8 },
-  mid: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  wheels: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: GAP, width: LW + GAP + RW, height: 7 * H },
   ask: { fontFamily: font.regular, fontSize: 14, lineHeight: 20, color: ob.ink, opacity: 0.7, marginTop: 10 },
+  mid: { flex: 1, justifyContent: 'center', alignItems: 'center', minHeight: 110 },
+  amount: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'center' },
+  zero: { fontFamily: font.bold, color: NAVY, opacity: 0.25 },
+  tug: { fontFamily: font.medium, color: NAVY, opacity: 0.55, marginLeft: 4, marginTop: 4 },
+  spoken: { fontFamily: font.regular, fontSize: 15, color: ob.ink, opacity: 0.7, marginTop: 6 },
+  pad: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 10 },
+  key: { width: '33.333%', height: 62, alignItems: 'center', justifyContent: 'center', borderRadius: 31 },
+  keyDown: { backgroundColor: 'rgba(255,255,255,0.55)' },
+  keyText: { fontFamily: font.medium, fontSize: 28, color: ob.ink },
 });

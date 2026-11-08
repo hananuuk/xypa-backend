@@ -1,4 +1,8 @@
 export const mn: Record<string, string> = {
+  "Delete": "Устгах",
+  "{0} tögrög a month": "Сард {0} төгрөг",
+  "{0} thousand": "{0} мянга",
+  "{0} million": "{0} сая",
   "How much do you spend in a month?": "Та сардаа хэдэн төгрөгийн зарлага гаргадаг вэ?",
   "Change the amount": "Дүнг өөрчлөх",
   "Unit": "Нэгж",
