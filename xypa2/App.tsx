@@ -1,4 +1,4 @@
-import { Onest_300Light, Onest_400Regular, Onest_500Medium, useFonts } from '@expo-google-fonts/onest';
+import { Onest_300Light, Onest_400Regular, Onest_500Medium, Onest_700Bold, useFonts } from '@expo-google-fonts/onest';
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useMemo, useState } from 'react';
 import { BackHandler, View } from 'react-native';
@@ -136,7 +136,7 @@ function Shell() {
 }
 
 export default function App() {
-  const [loaded] = useFonts({ Onest_300Light, Onest_400Regular, Onest_500Medium });
+  const [loaded] = useFonts({ Onest_300Light, Onest_400Regular, Onest_500Medium, Onest_700Bold });
   if (!loaded) return <View style={{ flex: 1, backgroundColor: colors.page }} />;
   return (
     <SafeAreaProvider>

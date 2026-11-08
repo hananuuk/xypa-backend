@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Animated, FlatList, GestureResponderEvent, NativeScrollEvent, NativeSyntheticEvent, Pressable, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { font } from './tokens';
@@ -9,13 +9,15 @@ const tick = () => { try { Haptics.selectionAsync(); } catch { /* no haptics on 
  * A vertical picker: the value in the middle is solid, the ones around it fade out.
  * Scroll to choose (it snaps and ticks), or tap a value. Tapping the chosen one moves it up or down by one.
  */
-export function Wheel({ items, index, onIndex, width, itemHeight = 36, fontSize = 22, color = '#2F5BE0', label, rows = 5, curve, align = 'center', bend = 1 }: {
+export function Wheel({ items, index, onIndex, width, itemHeight = 36, fontSize = 22, color = '#2F5BE0', label, rows = 5, curve, align = 'center', bend = 1, bold = false }: {
   items: string[]; index: number; onIndex: (i: number) => void; width: number; itemHeight?: number; fontSize?: number; color?: string; label: string;
-  rows?: number; curve?: 'left' | 'right'; align?: 'left' | 'center' | 'right'; bend?: number;
+  rows?: number; curve?: 'left' | 'right'; align?: 'left' | 'center' | 'right'; bend?: number; bold?: boolean;
 }) {
   const H = itemHeight;
   const SHOWN = rows;
   const half = (rows - 1) / 2;
+  const R = H * 3.8; // radius of the half circle the values sit on
+  const [live, setLive] = useState(index);
   const y = useRef(new Animated.Value(0)).current;
   const list = useRef<FlatList<string>>(null);
   const last = useRef(index);
@@ -24,7 +26,7 @@ export function Wheel({ items, index, onIndex, width, itemHeight = 36, fontSize 
 
   // Keep the list in step with the value when it changes from outside (e.g. the unit changed and the number was capped).
   useEffect(() => {
-    last.current = index; ticked.current = index;
+    last.current = index; ticked.current = index; setLive(index);
     list.current?.scrollToOffset({ offset: index * H, animated: false });
   }, [H, items.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -43,7 +45,7 @@ export function Wheel({ items, index, onIndex, width, itemHeight = 36, fontSize 
     useNativeDriver: true,
     listener: (e: NativeSyntheticEvent<NativeScrollEvent>) => {
       const i = clamp(Math.round(e.nativeEvent.contentOffset.y / H));
-      if (i !== ticked.current) { ticked.current = i; tick(); }
+      if (i !== ticked.current) { ticked.current = i; tick(); setLive(i); }
     },
   });
 
@@ -55,7 +57,7 @@ export function Wheel({ items, index, onIndex, width, itemHeight = 36, fontSize 
       <Animated.FlatList
         ref={list}
         data={items}
-        extraData={index}
+        extraData={`${index}-${live}`}
         keyExtractor={(_, i) => String(i)}
         showsVerticalScrollIndicator={false}
         snapToInterval={H}
@@ -80,11 +82,11 @@ export function Wheel({ items, index, onIndex, width, itemHeight = 36, fontSize 
           return (
             <Pressable onPress={press} accessible={false} style={{ height: H }}>
               <Animated.Text numberOfLines={1} style={{
-                height: H, lineHeight: H, textAlign: align, fontFamily: font.medium, fontSize, color,
+                height: H, lineHeight: H, textAlign: align, fontFamily: bold && i === live ? font.bold : font.medium, fontSize, color,
                 opacity: y.interpolate({ inputRange: r, outputRange: [0.12, 0.3, 0.6, 1, 0.6, 0.3, 0.12], extrapolate: 'clamp' }),
                 transform: [
-                  { translateX: curve ? y.interpolate({ inputRange: r, outputRange: [3, 2, 1, 0, 1, 2, 3].map((k) => (curve === 'left' ? -1 : 1) * k * k * 3.2 * bend), extrapolate: 'clamp' }) : 0 },
-                  { scale: y.interpolate({ inputRange: r, outputRange: [0.62, 0.74, 0.86, 1, 0.86, 0.74, 0.62], extrapolate: 'clamp' }) },
+                  { translateX: curve ? y.interpolate({ inputRange: r, outputRange: [3, 2, 1, 0, 1, 2, 3].map((k) => (curve === 'left' ? -1 : 1) * (R - Math.sqrt(R * R - k * k * H * H)) * bend), extrapolate: 'clamp' }) : 0 },
+                  { scale: y.interpolate({ inputRange: r, outputRange: [0.7, 0.8, 0.9, 1, 0.9, 0.8, 0.7], extrapolate: 'clamp' }) },
                 ],
               }}>{item}</Animated.Text>
             </Pressable>

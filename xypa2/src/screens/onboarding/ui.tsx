@@ -3,7 +3,7 @@ import { tr } from '../../i18n';
 import { Image, ImageSourcePropType, Pressable, ScrollView, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native';
 import { Text } from '../../design/Text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Defs, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
+import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 import { Icon } from '../../design/Icon';
 import { colors, font } from '../../design/tokens';
 import { formatMoney, parseMoney } from '../../logic/money';
@@ -11,13 +11,12 @@ import { formatMoney, parseMoney } from '../../logic/money';
 export const ob = { page: '#FAF8F4', ink: '#1C1915', pink: '#F3BAB2' };
 
 /** Pastel poster background with two soft glows (Hello and Done). */
-export function Poster({ bg = ob.pink, glowA = '#E98A80', glowB = '#E9F181', image, sky, children }: { bg?: string; glowA?: string; glowB?: string; image?: ImageSourcePropType; sky?: boolean; children: React.ReactNode }) {
+export function Poster({ bg = ob.pink, glowA = '#E98A80', glowB = '#E9F181', image, children }: { bg?: string; glowA?: string; glowB?: string; image?: ImageSourcePropType; children: React.ReactNode }) {
   const insets = useSafeAreaInsets();
   const win = useWindowDimensions();
   return (
     <View style={[{ flex: 1, backgroundColor: bg, paddingTop: insets.top + 12, paddingBottom: Math.max(insets.bottom, 16) + 8, paddingHorizontal: 20 }]}>
       {image ? <Image source={image} resizeMode="cover" style={{ position: 'absolute', top: 0, left: 0, width: win.width, height: win.height }} accessible={false} />
-        : sky ? <FlowBackground w={win.width} h={win.height} />
         : (
           <Svg style={StyleSheet.absoluteFill} pointerEvents="none">
             <Defs>
@@ -141,17 +140,3 @@ const da = StyleSheet.create({
   t: { fontFamily: font.medium, fontSize: 15, color: ob.ink },
 });
 
-/** White page with a soft blue ribbon and a hazy blob: money flowing through. */
-function FlowBackground({ w, h }: { w: number; h: number }) {
-  const d = `M ${0.86 * w} -10 C ${0.6 * w} ${0.1 * h}, ${0.78 * w} ${0.2 * h}, ${0.56 * w} ${0.4 * h} S ${0.5 * w} ${0.62 * h}, ${0.62 * w} ${0.74 * h} S ${0.9 * w} ${0.88 * h}, ${0.96 * w} ${h + 10}`;
-  return (
-    <Svg width={w} height={h} style={{ position: 'absolute', top: 0, left: 0 }} pointerEvents="none">
-      <Defs>
-        <RadialGradient id="blob" cx={0.18 * w} cy={0.78 * h} rx={0.55 * w} ry={0.26 * h} gradientUnits="userSpaceOnUse"><Stop offset="0" stopColor="#2F5BE0" stopOpacity="0.75" /><Stop offset="1" stopColor="#2F5BE0" stopOpacity="0" /></RadialGradient>
-      </Defs>
-      <Rect width={w} height={h} fill="#FFFFFF" />
-      <Rect width={w} height={h} fill="url(#blob)" />
-      {[64, 52, 42, 33, 25, 18, 12, 7, 3].map((sw, i) => <Path key={sw} d={d} stroke="#2F5BE0" strokeOpacity={0.09 + i * 0.012} strokeWidth={sw} strokeLinecap="round" fill="none" />)}
-    </Svg>
-  );
-}

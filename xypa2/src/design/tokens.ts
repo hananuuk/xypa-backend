@@ -39,6 +39,7 @@ export const font = {
   light: 'Onest_300Light',
   regular: 'Onest_400Regular',
   medium: 'Onest_500Medium',
+  bold: 'Onest_700Bold',
 } as const;
 
 export const type = {
