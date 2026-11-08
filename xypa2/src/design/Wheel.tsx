@@ -3,17 +3,19 @@ import { Animated, FlatList, GestureResponderEvent, NativeScrollEvent, NativeSyn
 import * as Haptics from 'expo-haptics';
 import { font } from './tokens';
 
-const SHOWN = 5;
 const tick = () => { try { Haptics.selectionAsync(); } catch { /* no haptics on this device */ } };
 
 /**
  * A vertical picker: the value in the middle is solid, the ones around it fade out.
  * Scroll to choose (it snaps and ticks), or tap a value. Tapping the chosen one moves it up or down by one.
  */
-export function Wheel({ items, index, onIndex, width, itemHeight = 36, fontSize = 22, color = '#2F5BE0', label }: {
+export function Wheel({ items, index, onIndex, width, itemHeight = 36, fontSize = 22, color = '#2F5BE0', label, rows = 5, curve, align = 'center', bend = 1 }: {
   items: string[]; index: number; onIndex: (i: number) => void; width: number; itemHeight?: number; fontSize?: number; color?: string; label: string;
+  rows?: number; curve?: 'left' | 'right'; align?: 'left' | 'center' | 'right'; bend?: number;
 }) {
   const H = itemHeight;
+  const SHOWN = rows;
+  const half = (rows - 1) / 2;
   const y = useRef(new Animated.Value(0)).current;
   const list = useRef<FlatList<string>>(null);
   const last = useRef(index);
@@ -63,14 +65,14 @@ export function Wheel({ items, index, onIndex, width, itemHeight = 36, fontSize 
         onScroll={onScroll}
         onMomentumScrollEnd={settle}
         onScrollEndDrag={settle}
-        getItemLayout={(_, i) => ({ length: H, offset: H * (i + 2), index: i })}
-        ListHeaderComponent={<View style={{ height: H * 2 }} />}
-        ListFooterComponent={<View style={{ height: H * 2 }} />}
+        getItemLayout={(_, i) => ({ length: H, offset: H * (i + half), index: i })}
+        ListHeaderComponent={<View style={{ height: H * half }} />}
+        ListFooterComponent={<View style={{ height: H * half }} />}
         initialNumToRender={SHOWN + 4}
         windowSize={7}
         contentOffset={{ x: 0, y: index * H }}
         renderItem={({ item, index: i }) => {
-          const r = [(i - 2) * H, (i - 1) * H, i * H, (i + 1) * H, (i + 2) * H];
+          const r = [-3, -2, -1, 0, 1, 2, 3].map((d) => (i + d) * H);
           const press = (e: GestureResponderEvent) => {
             if (i !== index) go(i);
             else go(e.nativeEvent.locationY < H / 2 ? i - 1 : i + 1);
@@ -78,9 +80,12 @@ export function Wheel({ items, index, onIndex, width, itemHeight = 36, fontSize 
           return (
             <Pressable onPress={press} accessible={false} style={{ height: H }}>
               <Animated.Text numberOfLines={1} style={{
-                height: H, lineHeight: H, textAlign: 'center', fontFamily: font.medium, fontSize, color,
-                opacity: y.interpolate({ inputRange: r, outputRange: [0.08, 0.32, 1, 0.32, 0.08], extrapolate: 'clamp' }),
-                transform: [{ scale: y.interpolate({ inputRange: r, outputRange: [0.7, 0.85, 1, 0.85, 0.7], extrapolate: 'clamp' }) }],
+                height: H, lineHeight: H, textAlign: align, fontFamily: font.medium, fontSize, color,
+                opacity: y.interpolate({ inputRange: r, outputRange: [0.12, 0.3, 0.6, 1, 0.6, 0.3, 0.12], extrapolate: 'clamp' }),
+                transform: [
+                  { translateX: curve ? y.interpolate({ inputRange: r, outputRange: [3, 2, 1, 0, 1, 2, 3].map((k) => (curve === 'left' ? -1 : 1) * k * k * 3.2 * bend), extrapolate: 'clamp' }) : 0 },
+                  { scale: y.interpolate({ inputRange: r, outputRange: [0.62, 0.74, 0.86, 1, 0.86, 0.74, 0.62], extrapolate: 'clamp' }) },
+                ],
               }}>{item}</Animated.Text>
             </Pressable>
           );
