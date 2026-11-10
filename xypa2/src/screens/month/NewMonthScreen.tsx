@@ -64,7 +64,7 @@ const s = StyleSheet.create({
   hero: { fontFamily: font.medium, fontSize: 44, lineHeight: 48, letterSpacing: -1.8, color: colors.ink, marginTop: 10 },
   sub: { fontFamily: font.regular, fontSize: 16, lineHeight: 23, color: colors.ink2, marginTop: 10 },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 56 },
-  rowL: { fontFamily: font.regular, fontSize: 15, color: colors.ink, flexShrink: 1 , flexShrink: 1 },
+  rowL: { fontFamily: font.regular, fontSize: 15, color: colors.ink, flexShrink: 1 },
   rowV: { fontFamily: font.medium, fontSize: 17, color: colors.ink },
   rtaL: { fontFamily: font.medium, fontSize: 16, color: colors.ink },
   rta: { fontFamily: font.regular, fontSize: 48, letterSpacing: -2, color: colors.accent, marginTop: 2 },
