@@ -11,6 +11,7 @@ export const colors = {
   line: '#E6E2DA',
   line2: '#CFCBC2',
   accent: '#C2410C',
+  navy: '#1B2A8A',
   accentSoft: '#FDEDE4',
   accentInk: '#9A3412',
   gaugeTrack: '#E4E1DA',

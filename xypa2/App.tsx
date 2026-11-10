@@ -6,6 +6,7 @@ import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-cont
 import { HideAmountsContext } from './src/design/Amounts';
 import { TabBar, TabId } from './src/design/TabBar';
 import { Toast } from './src/design/Toast';
+import { Haze } from './src/design/Haze';
 import { colors } from './src/design/tokens';
 import { hidesTabBar, Nav, NavContext, Route, Sheet } from './src/nav';
 import { AccountDetail, AccountsScreen } from './src/screens/accounts/AccountsScreen';
@@ -122,9 +123,10 @@ function Shell() {
     <HideAmountsContext.Provider value={st.hideAmounts}>
       <NavContext.Provider value={nav}>
         <View style={{ flex: 1, backgroundColor: colors.page }}>
+          <Haze />
           {tabs[tab]}
           {stack.map((r, i) => (
-            <View key={i} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: colors.page }}>{renderRoute(r)}</View>
+            <View key={i} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: colors.page }}><Haze />{renderRoute(r)}</View>
           ))}
           {showBar ? <TabBar active={tab} onChange={(t) => { setStack([]); setSheet(null); setTab(t); }} onAdd={() => setSheet({ name: 'addTxn' })} /> : null}
           <Toast toast={st.toast} onDismiss={st.dismissToast} bottom={(showBar ? 96 : 24) + insets.bottom} />

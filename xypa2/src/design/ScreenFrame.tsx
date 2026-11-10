@@ -15,7 +15,7 @@ export function ScreenFrame({ title, onBack, right, children, footer, scroll = t
     ? <ScrollView style={s.fill} contentContainerStyle={[s.content, { paddingBottom: footer ? 24 : insets.bottom + 40 }]} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>{children}</ScrollView>
     : <View style={[s.fill, s.content]}>{children}</View>;
   return (
-    <View style={[s.fill, { backgroundColor: colors.page, paddingTop: insets.top + 8 }]}>
+    <View style={[s.fill, { paddingTop: insets.top + 8 }]}>
       <View style={s.head}>
         <PillBar
           left={
@@ -39,5 +39,5 @@ const s = StyleSheet.create({
   content: { paddingHorizontal: 16, gap: 4 },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   title: { fontFamily: font.medium, fontSize: 20, color: colors.ink, flexShrink: 1 },
-  footer: { paddingHorizontal: 16, paddingTop: 10, backgroundColor: colors.page },
+  footer: { paddingHorizontal: 16, paddingTop: 10 },
 });

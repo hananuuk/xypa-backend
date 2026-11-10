@@ -137,7 +137,7 @@ const s = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 36 },
   title: { fontFamily: font.regular, fontSize: 16, color: colors.ink },
   titleStrong: { fontFamily: font.medium },
-  amount: { fontFamily: font.regular, fontSize: 26, color: colors.accent, letterSpacing: -0.8 },
+  amount: { fontFamily: font.regular, fontSize: 26, color: colors.navy, letterSpacing: -0.8 },
   barArea: { height: 22, justifyContent: 'center', marginTop: 12 },
   dashes: { flexDirection: 'row', gap: 2, height: 4 },
   dash: { flex: 1, height: 4, borderRadius: 2 },
