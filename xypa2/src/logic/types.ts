@@ -51,7 +51,8 @@ export type Goal = {
   by: string;
 };
 
-export type MerchantRule = { merchant: string; envelopeId: string };
+/** `contains` rules match any payment whose text includes `merchant`; plain rules match the exact merchant. */
+export type MerchantRule = { merchant: string; envelopeId: string; contains?: boolean };
 
 export type CoverSource =
   | { kind: 'rta'; amount: number }

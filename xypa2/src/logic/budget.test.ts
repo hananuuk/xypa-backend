@@ -162,3 +162,17 @@ describe('spentByDay', () => {
     expect(days).toEqual({ 3: 150, 5: 25 });
   });
 });
+
+describe('keyword rules', () => {
+  const base = { id: 't', accountId: 'a', amount: 5000, type: 'spend' as const, date: '2026-11-01', source: 'gmail' as const, envelopeId: null };
+  it('files by contains, case-insensitive', () => {
+    expect(applyRules({ ...base, merchant: 'EMART Sukhbaatar' } as any, [{ merchant: 'emart', envelopeId: 'food', contains: true }])).toBe('food');
+  });
+  it('exact rule wins over keyword', () => {
+    const rules = [{ merchant: 'emart', envelopeId: 'food', contains: true }, { merchant: 'EMART Sukhbaatar', envelopeId: 'home' }];
+    expect(applyRules({ ...base, merchant: 'EMART Sukhbaatar' } as any, rules)).toBe('home');
+  });
+  it('ignores income', () => {
+    expect(applyRules({ ...base, type: 'income', merchant: 'EMART' } as any, [{ merchant: 'emart', envelopeId: 'food', contains: true }])).toBeNull();
+  });
+});

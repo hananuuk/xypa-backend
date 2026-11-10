@@ -118,8 +118,14 @@ export function refile(txns: Txn[], txnId: string, envelopeId: string | null): T
 }
 
 export function applyRules(txn: Txn, rules: MerchantRule[]): string | null {
-  const rule = rules.find((r) => r.merchant.toLowerCase() === txn.merchant.toLowerCase());
-  return rule ? rule.envelopeId : txn.envelopeId;
+  const m = txn.merchant.toLowerCase();
+  const exact = rules.find((r) => !r.contains && r.merchant.toLowerCase() === m);
+  if (exact) return exact.envelopeId;
+  if (txn.type === 'spend' && !txn.kind) {
+    const word = rules.find((r) => r.contains && r.merchant.trim() !== '' && m.includes(r.merchant.trim().toLowerCase()));
+    if (word) return word.envelopeId;
+  }
+  return txn.envelopeId;
 }
 
 /** Newly arrived txns get filed by merchant rules; the rest wait in Review. */

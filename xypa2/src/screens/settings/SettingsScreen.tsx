@@ -63,7 +63,7 @@ export function SettingsScreen() {
         )}
         {msg ? <Text style={s.hint} accessibilityLiveRegion="polite">{msg}</Text> : null}
         <Row label="Add a bank statement" onPress={() => nav.push({ name: 'importStatement' })} />
-        <InnerCard style={s.row}><Text style={s.label}>Merchant rules</Text><Text style={s.value}>{tr('{0} rules', st.rules.length)}</Text></InnerCard>
+        <Row label="Sorting rules" value={tr('{0} rules', st.rules.length)} onPress={() => nav.push({ name: 'rules' })} />
       </Block>
       <Block padding={false} style={s.block}>
         <Title t="BUDGET" />

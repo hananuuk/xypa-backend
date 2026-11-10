@@ -58,6 +58,8 @@ type Store = Persisted & {
   addTxn: (t: Omit<Txn, 'id' | 'source'>) => void;
   /** File every unsorted purchase from one merchant, and remember it for next time. */
   fileMerchant: (merchant: string, envelopeId: string) => void;
+  addKeywordRule: (text: string, envelopeId: string) => number;
+  removeRule: (index: number) => void;
   fileTxn: (txnId: string, envelopeId: string, rule?: boolean) => void;
   addGoalMoney: (goalId: string, amount: number) => void;
   removeGoal: (goalId: string) => void;
@@ -146,6 +148,20 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       txns: autoFile([...s.txns, { ...t, id: `txn-${Date.now()}`, source: 'manual' }], s.rules),
       accounts: s.accounts.map((a) => (a.id === t.accountId ? { ...a, balance: a.balance + (t.type === 'spend' ? -t.amount : t.amount) } : a)),
     })),
+    addKeywordRule: (text, envelopeId) => {
+      const word = text.trim();
+      if (!word) return 0;
+      const rule = { merchant: word, envelopeId, contains: true };
+      const hit = (t: Txn) => t.envelopeId === null && t.type === 'spend' && !t.kind && t.merchant.toLowerCase().includes(word.toLowerCase());
+      const n = state.txns.filter(hit).length;
+      change(n ? tr('Rule added, {0} payments sorted', n) : 'Rule added', (s) => ({
+        ...s,
+        txns: s.txns.map((t) => (hit(t) ? { ...t, envelopeId } : t)),
+        rules: [...s.rules.filter((r) => !(r.contains && r.merchant.toLowerCase() === word.toLowerCase())), rule],
+      }));
+      return n;
+    },
+    removeRule: (index) => change('Rule removed', (s) => ({ ...s, rules: s.rules.filter((_, i) => i !== index) })),
     fileMerchant: (merchant, envelopeId) => change('Sorted', (s) => ({
       ...s,
       txns: s.txns.map((t) => (t.merchant === merchant && t.envelopeId === null && t.type === 'spend' && !t.kind ? { ...t, envelopeId } : t)),

@@ -13,7 +13,8 @@ export type Route =
   | { name: 'txnList'; title: string; month: string; envelopeId?: string; merchant?: string }
   | { name: 'ask' }
   | { name: 'importStatement' }
-  | { name: 'sortMerchants' };
+  | { name: 'sortMerchants' }
+  | { name: 'rules' };
 
 /** Bottom sheets opened from anywhere. */
 export type Sheet =
@@ -51,4 +52,4 @@ export const useNav = () => {
 };
 
 /** Routes that hide the tab bar (spec §3.1). */
-export const hidesTabBar = (r: Route | undefined) => !!r && (r.name === 'assign' || r.name === 'review' || r.name === 'editHome' || r.name === 'newMonth' || r.name === 'ask' || r.name === 'importStatement' || r.name === 'sortMerchants');
+export const hidesTabBar = (r: Route | undefined) => !!r && (r.name === 'assign' || r.name === 'review' || r.name === 'editHome' || r.name === 'newMonth' || r.name === 'ask' || r.name === 'importStatement' || r.name === 'sortMerchants' || r.name === 'rules');

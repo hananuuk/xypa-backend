@@ -30,6 +30,7 @@ import { TxnListScreen } from './src/screens/reflect/TxnListScreen';
 import { AskScreen } from './src/screens/ask/AskScreen';
 import { ImportStatementScreen } from './src/screens/import/ImportStatementScreen';
 import { TxnSheet } from './src/sheets/TxnSheet';
+import { RulesScreen } from './src/screens/settings/RulesScreen';
 import { SortMerchantsScreen } from './src/screens/review/SortMerchantsScreen';
 import { topUnsortedMerchants } from './src/logic/topMerchants';
 import { StoreProvider, useStore } from './src/store/store';
@@ -87,6 +88,7 @@ function Shell() {
       case 'txnList': return <TxnListScreen title={r.title} month={r.month} envelopeId={r.envelopeId} merchant={r.merchant} />;
       case 'ask': return <AskScreen />;
       case 'sortMerchants': return <SortMerchantsScreen />;
+      case 'rules': return <RulesScreen />;
       case 'importStatement': return <ImportStatementScreen />;
     }
   };
