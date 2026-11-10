@@ -47,12 +47,13 @@ export const deleteAccount = () => call<{ ok: boolean }>('/v2/me', { method: 'DE
 
 export type ScanProgress = { read: number; total: number; found: number };
 
-/** Read the last 3 months of bank emails: list ids, then parse them in small batches. */
-export async function scanGmail(onProgress: (p: ScanProgress) => void): Promise<Found[]> {
+/** Read bank emails (the last 3 months, or only those after `afterMs`): list ids, then parse them in small batches. */
+export async function scanGmail(onProgress: (p: ScanProgress) => void, afterMs?: number): Promise<Found[]> {
+  const after = afterMs ? Math.floor(afterMs / 1000) : 0;
   const ids: string[] = [];
   let page: string | null = null;
   do {
-    const r: { ids: string[]; next: string | null } = await call(`/v2/scan/ids${page ? `?page=${encodeURIComponent(page)}` : ''}`);
+    const r: { ids: string[]; next: string | null } = await call(`/v2/scan/ids?${after ? `after=${after}&` : ''}${page ? `page=${encodeURIComponent(page)}` : ''}`);
     ids.push(...r.ids);
     page = r.next;
     if (ids.length >= 600) break;

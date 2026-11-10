@@ -1,7 +1,7 @@
 import { Onest_300Light, Onest_400Regular, Onest_500Medium, Onest_700Bold, useFonts } from '@expo-google-fonts/onest';
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useMemo, useState } from 'react';
-import { BackHandler, View } from 'react-native';
+import { AppState, BackHandler, View } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { HideAmountsContext } from './src/design/Amounts';
 import { TabBar, TabId } from './src/design/TabBar';
@@ -54,6 +54,14 @@ function Shell() {
     if (wasOnboarding.current && !inOnboarding && topUnsortedMerchants(st.txns).length > 0) setStack([{ name: 'sortMerchants' }]);
     wasOnboarding.current = inOnboarding;
   }, [inOnboarding]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Pick up new bank emails when the app opens and whenever it comes back to the foreground (the store throttles to every 15 min).
+  React.useEffect(() => {
+    if (!st.ready || inOnboarding || !st.profile?.gmail) return;
+    st.syncGmail();
+    const sub = AppState.addEventListener('change', (s) => { if (s === 'active') st.syncGmail(); });
+    return () => sub.remove();
+  }, [st.ready, inOnboarding, st.profile?.gmail]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const back = useCallback(() => setStack((s) => s.slice(0, -1)), []);
   const nav: Nav = useMemo(() => ({

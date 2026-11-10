@@ -1,4 +1,12 @@
 export const mn: Record<string, string> = {
+  "Sync Gmail now": "Gmail-г одоо шинэчлэх",
+  "Syncing…": "Шинэчилж байна…",
+  "Not yet": "Хараахан үгүй",
+  "{0} min ago": "{0} мин өмнө",
+  "{0} h ago": "{0} цагийн өмнө",
+  "{0} new transactions": "{0} шинэ гүйлгээ",
+  "Up to date": "Шинэчлэгдсэн",
+  "Couldn't reach Gmail. Try again.": "Gmail-д холбогдож чадсангүй. Дахин оролдоно уу.",
   "Sorting rules": "Ангилах дүрэм",
   "Rules you wrote": "Таны бичсэн дүрэм",
   "Sorted by you": "Таны ангилсан",

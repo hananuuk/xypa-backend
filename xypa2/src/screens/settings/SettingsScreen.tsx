@@ -33,6 +33,14 @@ function Toggle({ label, value, onChange }: { label: string; value: boolean; onC
   );
 }
 
+function lastSync(at?: number) {
+  if (!at) return tr('Not yet');
+  const m = Math.round((Date.now() - at) / 60000);
+  if (m < 1) return tr('Just now');
+  if (m < 60) return tr('{0} min ago', m);
+  return tr('{0} h ago', Math.round(m / 60));
+}
+
 const Title = ({ t }: { t: string }) => <Text style={s.section}>{t}</Text>;
 
 export function SettingsScreen() {
@@ -42,6 +50,14 @@ export function SettingsScreen() {
   const cur = CURRENCIES[st.currency ?? 'MNT'];
   const name = st.profile?.name?.trim();
   const [msg, setMsg] = React.useState<string | null>(null);
+  const [syncing, setSyncing] = React.useState(false);
+  const syncNow = async () => {
+    if (syncing) return;
+    setMsg(null); setSyncing(true);
+    const r = await st.syncGmail(true);
+    setSyncing(false);
+    if (r && 'error' in r) setMsg("Couldn't reach Gmail. Try again.");
+  };
   const connect = async () => {
     setMsg(null);
     const r = await authenticate(st.profile?.email ? 'gmail' : 'signin');
@@ -62,6 +78,7 @@ export function SettingsScreen() {
           <Row label="Gmail" value={st.profile?.email ? 'Connect' : 'Sign in with Google'} onPress={connect} />
         )}
         {msg ? <Text style={s.hint} accessibilityLiveRegion="polite">{msg}</Text> : null}
+        {st.profile?.gmail ? <Row label="Sync Gmail now" value={syncing ? tr('Syncing…') : lastSync(st.lastSyncAt)} onPress={syncNow} /> : null}
         <Row label="Add a bank statement" onPress={() => nav.push({ name: 'importStatement' })} />
         <Row label="Sorting rules" value={tr('{0} rules', st.rules.length)} onPress={() => nav.push({ name: 'rules' })} />
       </Block>

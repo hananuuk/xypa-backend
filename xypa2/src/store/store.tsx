@@ -6,6 +6,7 @@ import {
 } from '../logic/budget';
 import type { Account, CoverSource, Envelope, Goal, MerchantRule, Txn } from '../logic/types';
 import { CurrencyCode, setCurrency } from '../logic/money';
+import { scanGmail } from '../api/client';
 import { ImportResult, planImport } from '../logic/importStatement';
 import type { Found } from '../logic/scan';
 import { getToday } from './calendar';
@@ -28,6 +29,8 @@ export type Persisted = {
   notify?: { overspend: boolean; newTxns: boolean; morning: boolean };
   /** Preview switch for the Pro assistant. Missing counts as on while Pro is in preview. */
   pro?: boolean;
+  /** When Gmail was last read (ms). Later syncs only fetch newer mail. */
+  lastSyncAt?: number;
 };
 
 const defaults = (): Persisted => ({
@@ -58,6 +61,8 @@ type Store = Persisted & {
   addTxn: (t: Omit<Txn, 'id' | 'source'>) => void;
   /** File every unsorted purchase from one merchant, and remember it for next time. */
   fileMerchant: (merchant: string, envelopeId: string) => void;
+  /** Read new bank emails since the last sync and add them. Returns how many were added, or null if skipped/failed. */
+  syncGmail: (force?: boolean) => Promise<{ added: number } | { error: string } | null>;
   addKeywordRule: (text: string, envelopeId: string) => number;
   removeRule: (index: number) => void;
   fileTxn: (txnId: string, envelopeId: string, rule?: boolean) => void;
@@ -116,6 +121,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   setCurrency(state.currency ?? 'MNT');
   setLang(state.language ?? deviceLang());
+  const stateRef = useRef(state);
+  stateRef.current = state;
+  const syncing = useRef(false);
   const month = today.month;
   const views = useMemo(() => viewEnvelopes(state.envelopes, state.txns, month), [state.envelopes, state.txns, month]);
   const rta = useMemo(() => readyToAssign(state.accounts, views, state.goals), [state.accounts, views, state.goals]);
@@ -148,6 +156,27 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       txns: autoFile([...s.txns, { ...t, id: `txn-${Date.now()}`, source: 'manual' }], s.rules),
       accounts: s.accounts.map((a) => (a.id === t.accountId ? { ...a, balance: a.balance + (t.type === 'spend' ? -t.amount : t.amount) } : a)),
     })),
+    syncGmail: async (force) => {
+      const cur = stateRef.current;
+      if (syncing.current || !cur.profile?.gmail || cur.onboarded === false) return null;
+      if (!force && Date.now() - (cur.lastSyncAt ?? 0) < 15 * 60 * 1000) return null;
+      syncing.current = true;
+      const startedAt = Date.now();
+      try {
+        // Re-read a day of overlap so nothing falls in the gap; duplicates are skipped by planImport.
+        const found = await scanGmail(() => {}, cur.lastSyncAt ? cur.lastSyncAt - 24 * 3600 * 1000 : undefined);
+        const r = planImport(found, stateRef.current.accounts, stateRef.current.envelopes, stateRef.current.txns, stateRef.current.rules, month);
+        const apply = (s: Persisted): Persisted => ({ ...s, accounts: r.accounts, txns: r.txns, lastSyncAt: startedAt });
+        if (r.added > 0) change(tr('{0} new transactions', r.added), apply);
+        else if (force) change('Up to date', (s) => ({ ...s, lastSyncAt: startedAt }));
+        else setState((s) => ({ ...s, lastSyncAt: startedAt }));
+        return { added: r.added };
+      } catch (e) {
+        return { error: (e as Error).message };
+      } finally {
+        syncing.current = false;
+      }
+    },
     addKeywordRule: (text, envelopeId) => {
       const word = text.trim();
       if (!word) return 0;
@@ -197,7 +226,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     startOnboarding: () => setState((s) => ({ ...s, onboarded: false })),
     completeOnboarding: (plan) => setState((s) => ({
       ...s, accounts: plan.accounts, envelopes: plan.envelopes, txns: plan.txns ?? [], goals: [], rules: [],
-      homeOrder: ['notes', 'rta', 'safe', 'envs'], homeHidden: {}, checklist: { sort: false, cover: false, check: false, assign: false }, onboarded: true,
+      homeOrder: ['notes', 'rta', 'safe', 'envs'], homeHidden: {}, checklist: { sort: false, cover: false, check: false, assign: false }, onboarded: true, lastSyncAt: s.profile?.gmail ? Date.now() : s.lastSyncAt,
     })),
     setHomeLayout: (order, hidden) => setState((s) => ({ ...s, homeOrder: order, homeHidden: hidden })),
   };
