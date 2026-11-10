@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, LayoutAnimation, Pressable, StyleSheet, View } from 'react-native';
+import { Animated, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
+import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
 import { tr } from '../../i18n';
 import { Text } from '../../design/Text';
@@ -14,7 +15,7 @@ const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'back'];
 /** One character of the amount. It pops up from below when it first appears. */
 function Pop({ ch, size }: { ch: string; size: number }) {
   const t = useRef(new Animated.Value(0)).current;
-  useEffect(() => { Animated.spring(t, { toValue: 1, useNativeDriver: true, speed: 18, bounciness: 8 }).start(); }, [t]);
+  useEffect(() => { Animated.spring(t, { toValue: 1, useNativeDriver: true, speed: 18, bounciness: 8 }).start(() => t.setValue(1)); }, [t]);
   return (
     <Animated.Text style={{
       fontFamily: font.bold, fontSize: size, lineHeight: size * 1.15, color: NAVY, fontVariant: ['tabular-nums'],
@@ -37,10 +38,11 @@ function amountChars(digits: string): { key: string; ch: string }[] {
 
 /** "Let's work out your money flow first." Type what you spend in a month; the digits pop in as you type. */
 export function SpendFlowStep({ onBack, onNext }: { onBack: () => void; onNext: (monthlySpend: number) => void }) {
-  const [digits, setDigits] = useState('2000000');
+  const [digits, setDigits] = useState('');
   const value = Number(digits || 0);
   const chars = amountChars(digits);
   const size = chars.length <= 7 ? 64 : chars.length <= 9 ? 54 : 46;
+  const win = useWindowDimensions();
   const { million, thousand, rest } = spokenParts(value);
   const spoken = [million ? tr('{0} million', million) : '', thousand ? tr('{0} thousand', thousand) : '', rest && value >= 1000 ? String(rest) : ''].filter(Boolean).join(' ');
 
@@ -48,12 +50,21 @@ export function SpendFlowStep({ onBack, onNext }: { onBack: () => void; onNext: 
     const next = pressKey(digits, k);
     if (next === digits) return;
     try { Haptics.selectionAsync(); } catch { /* no haptics */ }
-    LayoutAnimation.configureNext({ duration: 170, update: { type: LayoutAnimation.Types.easeInEaseOut } });
     setDigits(next);
   };
 
   return (
     <Poster image={require('../../../assets/flow-bg.jpg')}>
+      <Svg pointerEvents="none" width={win.width} height={400} style={{ position: 'absolute', top: 0, left: 0 }}>
+        <Defs>
+          <LinearGradient id="fade" x1="0" y1="0" x2="0" y2="1">
+            <Stop offset="0" stopColor="#FFFFFF" stopOpacity="0.96" />
+            <Stop offset="0.6" stopColor="#FFFFFF" stopOpacity="0.9" />
+            <Stop offset="1" stopColor="#FFFFFF" stopOpacity="0" />
+          </LinearGradient>
+        </Defs>
+        <Rect width={win.width} height={400} fill="url(#fade)" />
+      </Svg>
       <Pressable accessibilityRole="button" accessibilityLabel={tr('Back')} onPress={onBack} style={s.back}><Icon name="chevronLeft" size={20} /></Pressable>
       <Text style={s.title} accessibilityRole="header">Let's work out your money flow first.</Text>
       <Text style={s.ask}>How much do you spend in a month?</Text>
@@ -67,7 +78,7 @@ export function SpendFlowStep({ onBack, onNext }: { onBack: () => void; onNext: 
       <View style={s.pad}>
         {KEYS.map((k, i) => k === '' ? <View key={i} style={s.key} /> : (
           <Pressable key={k} accessibilityRole="button" accessibilityLabel={k === 'back' ? tr('Delete') : k} onPress={() => press(k)}
-            onLongPress={k === 'back' ? () => { LayoutAnimation.configureNext({ duration: 170, update: { type: LayoutAnimation.Types.easeInEaseOut } }); setDigits(''); } : undefined}
+            onLongPress={k === 'back' ? () => setDigits('') : undefined}
             style={({ pressed }) => [s.key, pressed && s.keyDown]}>
             {k === 'back' ? <Text style={s.keyText}>⌫</Text> : <Text style={s.keyText}>{k}</Text>}
           </Pressable>
@@ -84,7 +95,7 @@ const s = StyleSheet.create({
   ask: { fontFamily: font.regular, fontSize: 14, lineHeight: 20, color: ob.ink, opacity: 0.7, marginTop: 10 },
   mid: { flex: 1, justifyContent: 'center', alignItems: 'center', minHeight: 110 },
   amount: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'center' },
-  zero: { fontFamily: font.bold, color: NAVY, opacity: 0.25 },
+  zero: { fontFamily: font.bold, color: NAVY, opacity: 0.3 },
   tug: { fontFamily: font.medium, color: NAVY, opacity: 0.55, marginLeft: 4, marginTop: 4 },
   spoken: { fontFamily: font.regular, fontSize: 15, color: ob.ink, opacity: 0.7, marginTop: 6 },
   pad: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 10 },
