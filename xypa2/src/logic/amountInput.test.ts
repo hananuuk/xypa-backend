@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { groupDigits, pressKey, spokenParts } from './amountInput';
+import { groupDigits, pressKey, spokenParts, usualFromCategories } from './amountInput';
 
 describe('amountInput', () => {
   it('groups digits in threes', () => {
@@ -18,5 +18,11 @@ describe('amountInput', () => {
   it('splits an amount into million / thousand / rest', () => {
     expect(spokenParts(2_500_000)).toEqual({ million: 2, thousand: 500, rest: 0 });
     expect(spokenParts(1_234)).toEqual({ million: 0, thousand: 1, rest: 234 });
+  });
+  it('splits the monthly amount across the chosen categories', () => {
+    const u = usualFromCategories(['Groceries', 'Coffee', 'Taxi'], 1_000_000);
+    expect(u.map((x) => x.monthly)).toEqual([333_000, 333_000, 333_000]);
+    expect(new Set(u.map((x) => x.id)).size).toBe(3);
+    expect(usualFromCategories([], 500_000)).toEqual([]);
   });
 });

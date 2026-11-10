@@ -56,20 +56,29 @@ const a = StyleSheet.create({
   input: { fontFamily: font.medium, fontSize: 17, textAlign: 'right', color: ob.ink, backgroundColor: colors.white, borderRadius: 16, borderWidth: 1, borderColor: colors.line, minHeight: 48, paddingHorizontal: 16, fontVariant: ['tabular-nums'] },
 });
 
+export const TOTAL_STEPS = 8;
+
+/** Back button and the segmented progress bar. */
+export function StepHeader({ step, onBack }: { step: number; onBack: () => void }) {
+  return (
+    <View style={sf.head}>
+      <Pressable accessibilityRole="button" accessibilityLabel={tr('Back')} onPress={onBack} style={sf.back}><Icon name="chevronLeft" size={20} /></Pressable>
+      {step > 0 ? (<>
+        <View style={sf.segs} accessible accessibilityLabel={tr('Step {0} of {1}', step, TOTAL_STEPS)}>
+          {Array.from({ length: TOTAL_STEPS }, (_, i) => <View key={i} style={[sf.seg, { backgroundColor: i < step ? ob.ink : '#DAD6CE' }]} />)}
+        </View>
+        <Text style={sf.count}>{`${step}/${TOTAL_STEPS}`}</Text>
+      </>) : null}
+    </View>
+  );
+}
+
 /** Step layout: back button, 6-segment progress, title, scrolling body, pinned footer. */
 export function StepFrame({ step, title, subtitle, onBack, children, footer }: { step: number; title: string; subtitle?: string; onBack: () => void; children: React.ReactNode; footer: React.ReactNode }) {
   const insets = useSafeAreaInsets();
   return (
     <View style={{ flex: 1, backgroundColor: ob.page, paddingTop: insets.top + 8 }}>
-      <View style={sf.head}>
-        <Pressable accessibilityRole="button" accessibilityLabel={tr('Back')} onPress={onBack} style={sf.back}><Icon name="chevronLeft" size={20} /></Pressable>
-        {step > 0 ? (<>
-          <View style={sf.segs} accessible accessibilityLabel={tr('Step {0} of 6', step)}>
-            {[1, 2, 3, 4, 5, 6].map((i) => <View key={i} style={[sf.seg, { backgroundColor: i <= step ? ob.ink : '#DAD6CE' }]} />)}
-          </View>
-          <Text style={sf.count}>{step} of 6</Text>
-        </>) : null}
-      </View>
+      <StepHeader step={step} onBack={onBack} />
       <ScrollView contentContainerStyle={sf.body} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         <Text style={sf.title} accessibilityRole="header">{title}</Text>
         {subtitle ? <Text style={sf.sub}>{subtitle}</Text> : null}

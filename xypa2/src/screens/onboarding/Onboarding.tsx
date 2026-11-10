@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { tr } from '../../i18n';
 import { BankAvatar } from '../../design/BankAvatar';
 import { BANKS, bankFor } from '../../data/banks';
@@ -16,13 +16,14 @@ import {
 import { monthlySaving } from '../../logic/budget';
 import { draftFromScan, Found, txnsFromScan } from '../../logic/scan';
 import { useStore } from '../../store/store';
-import { SpendFlowStep } from './SpendFlowStep';
+import { SpendFlowResult, SpendFlowStep } from './SpendFlowStep';
+import { usualFromCategories } from '../../logic/amountInput';
 import { StatementStep } from './StatementStep';
 import { EmailAlerts, NoEmails, Reading } from './GmailSteps';
 import { AmountInput, BigButton, CostFooter, DashedAdd, ob, Poster, SectionHead, StepFrame, Switch } from './ui';
 
 type Step = 'hello' | 'flow' | 'intro' | 'reading' | 'noEmails' | 'alerts' | 'statement' | 'accounts' | 'regular' | 'usual' | 'yearly' | 'assign' | 'ready';
-const ORDER: Step[] = ['intro', 'accounts', 'regular', 'usual', 'yearly', 'assign'];
+const ORDER: Step[] = ['flow', 'intro', 'accounts', 'regular', 'usual', 'yearly', 'assign'];
 const uid = () => Math.random().toString(36).slice(2, 8);
 
 export function Onboarding() {
@@ -33,13 +34,18 @@ export function Onboarding() {
   const [found, setFound] = useState<Found[]>([]);
   const [authMsg, setAuthMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const monthlySpend = useRef(0);
+  const [flow, setFlow] = useState<SpendFlowResult | undefined>(undefined);
   const [statementBack, setStatementBack] = useState<Step>('noEmails');
   const set = (p: Partial<Draft>) => setDraft((d) => ({ ...d, ...p }));
   const n = ORDER.indexOf(step as Step) + 1;
   const back = () => setStep(ORDER[Math.max(0, ORDER.indexOf(step) - 1)] ?? 'hello');
   const next = () => setStep(ORDER[ORDER.indexOf(step) + 1] ?? 'ready');
 
+  /** Set up by hand: start the "usual spending" list from the categories picked earlier. */
+  const manual = () => {
+    setDraft((d) => (d.usual.length || !flow?.categories.length ? d : { ...d, usual: usualFromCategories(flow.categories, flow.monthlySpend) }));
+    setStep('accounts');
+  };
   const signIn = async () => {
     setBusy(true); setAuthMsg(null);
     const r = await authenticate('signin');
@@ -63,13 +69,13 @@ export function Onboarding() {
   };
 
   if (step === 'hello') return <Hello onStart={signIn} busy={busy} message={authMsg} />;
-  if (step === 'flow') return <SpendFlowStep onBack={() => setStep('hello')} onNext={(v) => { monthlySpend.current = v; setStep('intro'); }} />;
-  if (step === 'reading') return <Reading onDone={useFound} onFail={() => setStep('accounts')} />;
-  if (step === 'noEmails') return <NoEmails onBack={() => setStep('intro')} onStatement={() => { setStatementBack('noEmails'); setStep('statement'); }} onAlerts={() => setStep('alerts')} onManual={() => setStep('accounts')} onOtherAccount={otherAccount} />;
+  if (step === 'flow') return <SpendFlowStep initial={flow} onBack={() => setStep('hello')} onNext={(r) => { setFlow(r); setStep('intro'); }} />;
+  if (step === 'reading') return <Reading onDone={useFound} onFail={manual} />;
+  if (step === 'noEmails') return <NoEmails onBack={() => setStep('intro')} onStatement={() => { setStatementBack('noEmails'); setStep('statement'); }} onAlerts={() => setStep('alerts')} onManual={manual} onOtherAccount={otherAccount} />;
   if (step === 'statement') return <StatementStep onBack={() => setStep(statementBack)} onRead={useFound} />;
-  if (step === 'alerts') return <EmailAlerts onBack={() => setStep('noEmails')} onStatement={() => setStep('statement')} onManual={() => setStep('accounts')} />;
+  if (step === 'alerts') return <EmailAlerts onBack={() => setStep('noEmails')} onStatement={() => setStep('statement')} onManual={manual} />;
   if (step === 'ready') return <Ready draft={draft} assigned={assigned} onOpen={() => { const plan = buildPlan(draft, assigned); st.completeOnboarding({ ...plan, txns: txnsFromScan(found, plan.envelopes, plan.accounts, st.today.month) }); }} onRestart={() => { setDraft(emptyDraft()); setAssigned({}); setFound([]); setStep('hello'); }} />;
-  if (step === 'intro') return <Intro onBack={() => setStep('flow')} onManual={() => { setFound([]); setStep('accounts'); }} onStatement={() => { setStatementBack('intro'); setStep('statement'); }} onAllow={allowGmail} busy={busy} message={authMsg} />;
+  if (step === 'intro') return <Intro onBack={() => setStep('flow')} onManual={() => { setFound([]); manual(); }} onStatement={() => { setStatementBack('intro'); setStep('statement'); }} onAllow={allowGmail} busy={busy} message={authMsg} />;
   if (step === 'accounts') return <Accounts n={n} draft={draft} set={set} onBack={back} onNext={next} />;
   if (step === 'regular') return <Regular n={n} draft={draft} set={set} onBack={back} onNext={next} />;
   if (step === 'usual') return <Usual n={n} draft={draft} set={set} onBack={back} onNext={next} />;
