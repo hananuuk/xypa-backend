@@ -1,41 +1,61 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { tr } from '../../i18n';
-import { Image, ImageSourcePropType, Pressable, ScrollView, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native';
+import { Animated, Image, ImageSourcePropType, Pressable, ScrollView, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native';
 import { Text } from '../../design/Text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
+import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { Icon } from '../../design/Icon';
 import { colors, font } from '../../design/tokens';
 import { formatMoney, parseMoney } from '../../logic/money';
 
-export const ob = { page: '#FAF8F4', ink: '#1C1915', pink: '#F3BAB2' };
+export const ob = { page: '#FAF8F4', ink: '#1C1915', pink: '#F3BAB2', navy: '#1B2A8A' };
+const FLOW_BG = require('../../../assets/flow-bg.jpg');
 
-/** Pastel poster background with two soft glows (Hello and Done). */
-export function Poster({ bg = ob.pink, glowA = '#E98A80', glowB = '#E9F181', image, children }: { bg?: string; glowA?: string; glowB?: string; image?: ImageSourcePropType; children: React.ReactNode }) {
+/** White page with the blue ribbon (money flowing), a white fade at the top so titles stay readable. */
+export function Backdrop({ soft }: { soft?: boolean }) {
+  const win = useWindowDimensions();
+  return (
+    <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: '#FFFFFF' }]}>
+      <Image source={FLOW_BG} resizeMode="cover" accessible={false} style={{ position: 'absolute', top: 0, left: 0, width: win.width, height: win.height, opacity: soft ? 0.5 : 1 }} />
+      <Svg width={win.width} height={400} style={{ position: 'absolute', top: 0, left: 0 }}>
+        <Defs>
+          <LinearGradient id="bdfade" x1="0" y1="0" x2="0" y2="1">
+            <Stop offset="0" stopColor="#FFFFFF" stopOpacity="0.96" />
+            <Stop offset="0.6" stopColor="#FFFFFF" stopOpacity="0.9" />
+            <Stop offset="1" stopColor="#FFFFFF" stopOpacity="0" />
+          </LinearGradient>
+        </Defs>
+        <Rect width={win.width} height={400} fill="url(#bdfade)" />
+      </Svg>
+    </View>
+  );
+}
+
+/** Full-screen page. With no image it gets the ribbon backdrop. */
+export function Poster({ image, children }: { image?: ImageSourcePropType; children: React.ReactNode }) {
   const insets = useSafeAreaInsets();
   const win = useWindowDimensions();
   return (
-    <View style={[{ flex: 1, backgroundColor: bg, paddingTop: insets.top + 12, paddingBottom: Math.max(insets.bottom, 16) + 8, paddingHorizontal: 20 }]}>
-      {image ? <Image source={image} resizeMode="cover" style={{ position: 'absolute', top: 0, left: 0, width: win.width, height: win.height }} accessible={false} />
-        : (
-          <Svg style={StyleSheet.absoluteFill} pointerEvents="none">
-            <Defs>
-              <RadialGradient id="a" cx="0%" cy="45%" rx="70%" ry="30%"><Stop offset="0" stopColor={glowA} stopOpacity="0.85" /><Stop offset="1" stopColor={glowA} stopOpacity="0" /></RadialGradient>
-              <RadialGradient id="b" cx="100%" cy="92%" rx="60%" ry="25%"><Stop offset="0" stopColor={glowB} stopOpacity="0.9" /><Stop offset="1" stopColor={glowB} stopOpacity="0" /></RadialGradient>
-            </Defs>
-            <Rect width="100%" height="100%" fill="url(#a)" />
-            <Rect width="100%" height="100%" fill="url(#b)" />
-          </Svg>
-        )}
+    <View style={{ flex: 1, backgroundColor: '#FFFFFF', paddingTop: insets.top + 12, paddingBottom: Math.max(insets.bottom, 16) + 8, paddingHorizontal: 20 }}>
+      {image ? <Image source={image} resizeMode="cover" style={{ position: 'absolute', top: 0, left: 0, width: win.width, height: win.height }} accessible={false} /> : <Backdrop />}
       {children}
     </View>
+  );
+}
+
+/** Pops up from below when it first appears. */
+export function PopIn({ children, delay = 0, style }: { children: React.ReactNode; delay?: number; style?: object }) {
+  const t = useRef(new Animated.Value(0)).current;
+  useEffect(() => { Animated.spring(t, { toValue: 1, delay, useNativeDriver: true, speed: 16, bounciness: 8 }).start(() => t.setValue(1)); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  return (
+    <Animated.View style={[style, { opacity: t, transform: [{ translateY: t.interpolate({ inputRange: [0, 1], outputRange: [22, 0] }) }, { scale: t.interpolate({ inputRange: [0, 1], outputRange: [0.92, 1] }) }] }]}>{children}</Animated.View>
   );
 }
 
 export function Switch({ value, onChange, label }: { value: boolean; onChange: (v: boolean) => void; label: string }) {
   return (
     <Pressable accessibilityRole="switch" accessibilityLabel={tr(label)} accessibilityState={{ checked: value }} onPress={() => onChange(!value)} hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-      style={[sw.track, { backgroundColor: value ? ob.ink : '#C9C5BD' }]}>
+      style={[sw.track, { backgroundColor: value ? ob.navy : '#C9C5BD' }]}>
       <View style={[sw.knob, { alignSelf: value ? 'flex-end' : 'flex-start' }]} />
     </Pressable>
   );
@@ -65,7 +85,7 @@ export function StepHeader({ step, onBack }: { step: number; onBack: () => void 
       <Pressable accessibilityRole="button" accessibilityLabel={tr('Back')} onPress={onBack} style={sf.back}><Icon name="chevronLeft" size={20} /></Pressable>
       {step > 0 ? (<>
         <View style={sf.segs} accessible accessibilityLabel={tr('Step {0} of {1}', step, TOTAL_STEPS)}>
-          {Array.from({ length: TOTAL_STEPS }, (_, i) => <View key={i} style={[sf.seg, { backgroundColor: i < step ? ob.ink : '#DAD6CE' }]} />)}
+          {Array.from({ length: TOTAL_STEPS }, (_, i) => <View key={i} style={[sf.seg, { backgroundColor: i < step ? ob.navy : 'rgba(27,42,138,0.15)' }]} />)}
         </View>
         <Text style={sf.count}>{`${step}/${TOTAL_STEPS}`}</Text>
       </>) : null}
@@ -73,16 +93,17 @@ export function StepHeader({ step, onBack }: { step: number; onBack: () => void 
   );
 }
 
-/** Step layout: back button, 6-segment progress, title, scrolling body, pinned footer. */
+/** Step layout: back button, progress, title, a frosted card with the content, pinned footer. */
 export function StepFrame({ step, title, subtitle, onBack, children, footer }: { step: number; title: string; subtitle?: string; onBack: () => void; children: React.ReactNode; footer: React.ReactNode }) {
   const insets = useSafeAreaInsets();
   return (
-    <View style={{ flex: 1, backgroundColor: ob.page, paddingTop: insets.top + 8 }}>
+    <View style={{ flex: 1, backgroundColor: '#FFFFFF', paddingTop: insets.top + 8 }}>
+      <Backdrop soft />
       <StepHeader step={step} onBack={onBack} />
       <ScrollView contentContainerStyle={sf.body} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         <Text style={sf.title} accessibilityRole="header">{title}</Text>
         {subtitle ? <Text style={sf.sub}>{subtitle}</Text> : null}
-        {children}
+        <View style={sf.glass}>{children}</View>
       </ScrollView>
       <View style={[sf.footer, { paddingBottom: Math.max(insets.bottom, 12) + 4 }]}>{footer}</View>
     </View>
@@ -90,14 +111,15 @@ export function StepFrame({ step, title, subtitle, onBack, children, footer }: {
 }
 const sf = StyleSheet.create({
   head: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 20, paddingBottom: 6 },
-  back: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.chip, alignItems: 'center', justifyContent: 'center' },
+  back: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.85)', alignItems: 'center', justifyContent: 'center' },
   segs: { flex: 1, flexDirection: 'row', gap: 6 },
   seg: { flex: 1, height: 4, borderRadius: 2 },
   count: { fontFamily: font.medium, fontSize: 14, color: colors.ink2 },
   body: { paddingHorizontal: 20, paddingBottom: 24 },
-  title: { fontFamily: font.medium, fontSize: 34, lineHeight: 38, letterSpacing: -1.2, color: ob.ink, marginTop: 14 },
-  sub: { fontFamily: font.regular, fontSize: 16, lineHeight: 23, color: colors.ink2, marginTop: 10, marginBottom: 14 },
-  footer: { paddingHorizontal: 20, paddingTop: 8, gap: 10, backgroundColor: ob.page },
+  title: { fontFamily: font.medium, fontSize: 32, lineHeight: 38, letterSpacing: -1, color: ob.ink, marginTop: 14 },
+  sub: { fontFamily: font.regular, fontSize: 15, lineHeight: 22, color: ob.ink, opacity: 0.72, marginTop: 10, marginBottom: 14 },
+  glass: { backgroundColor: 'rgba(255,255,255,0.84)', borderRadius: 28, paddingHorizontal: 18, paddingTop: 2, paddingBottom: 18, borderWidth: 1, borderColor: 'rgba(27,42,138,0.08)' },
+  footer: { paddingHorizontal: 20, paddingTop: 8, gap: 10 },
 });
 
 export function CostFooter({ regular, everyday, yearly }: { regular: number; everyday: number; yearly?: number }) {
@@ -113,7 +135,7 @@ export function CostFooter({ regular, everyday, yearly }: { regular: number; eve
   );
 }
 const cf = StyleSheet.create({
-  box: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#EEEBE5', borderRadius: 20, padding: 16 },
+  box: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: 'rgba(255,255,255,0.92)', borderRadius: 22, padding: 16, borderWidth: 1, borderColor: 'rgba(27,42,138,0.1)' },
   label: { fontFamily: font.medium, fontSize: 12, letterSpacing: 1.4, color: ob.ink },
   sub: { fontFamily: font.regular, fontSize: 13, lineHeight: 18, color: colors.ink2, marginTop: 4 },
   total: { fontFamily: font.medium, fontSize: 22, letterSpacing: -0.6, color: ob.ink },
@@ -136,8 +158,8 @@ export const SectionHead = ({ title, right }: { title: string; right?: string })
   <View style={sh.row}><Text style={sh.t}>{title}</Text>{right ? <Text style={sh.r}>{right}</Text> : null}</View>
 );
 const sh = StyleSheet.create({
-  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', borderBottomWidth: 1.5, borderBottomColor: ob.ink, paddingBottom: 8, marginTop: 20 },
-  t: { fontFamily: font.medium, fontSize: 12, letterSpacing: 1.4, color: ob.ink },
+  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', borderBottomWidth: 1.5, borderBottomColor: ob.navy, paddingBottom: 8, marginTop: 20 },
+  t: { fontFamily: font.medium, fontSize: 12, letterSpacing: 1.4, color: ob.navy },
   r: { fontFamily: font.regular, fontSize: 13, color: colors.ink2 },
 });
 
@@ -145,7 +167,7 @@ export const DashedAdd = ({ label, onPress }: { label: string; onPress: () => vo
   <Pressable accessibilityRole="button" accessibilityLabel={tr(label)} onPress={onPress} style={da.btn}><Text style={da.t}>{label}</Text></Pressable>
 );
 const da = StyleSheet.create({
-  btn: { alignSelf: 'flex-start', minHeight: 48, borderRadius: 999, borderWidth: 1.5, borderStyle: 'dashed', borderColor: colors.line2, paddingHorizontal: 20, justifyContent: 'center', marginTop: 16 },
-  t: { fontFamily: font.medium, fontSize: 15, color: ob.ink },
+  btn: { alignSelf: 'flex-start', minHeight: 48, borderRadius: 999, borderWidth: 1.5, borderStyle: 'dashed', borderColor: 'rgba(27,42,138,0.4)', paddingHorizontal: 20, justifyContent: 'center', marginTop: 16 },
+  t: { fontFamily: font.medium, fontSize: 15, color: ob.navy },
 });
 

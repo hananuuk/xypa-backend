@@ -20,10 +20,10 @@ import { SpendFlowResult, SpendFlowStep } from './SpendFlowStep';
 import { usualFromCategories } from '../../logic/amountInput';
 import { StatementStep } from './StatementStep';
 import { EmailAlerts, NoEmails, Reading } from './GmailSteps';
-import { AmountInput, BigButton, CostFooter, DashedAdd, ob, Poster, SectionHead, StepFrame, Switch } from './ui';
+import { AmountInput, BigButton, CostFooter, DashedAdd, ob, PopIn, Poster, SectionHead, StepFrame, Switch } from './ui';
 
 type Step = 'hello' | 'flow' | 'intro' | 'reading' | 'noEmails' | 'alerts' | 'statement' | 'accounts' | 'regular' | 'usual' | 'yearly' | 'assign' | 'ready';
-const ORDER: Step[] = ['flow', 'intro', 'accounts', 'regular', 'usual', 'yearly', 'assign'];
+const ORDER: Step[] = ['intro', 'accounts', 'regular', 'usual', 'yearly', 'assign'];
 const uid = () => Math.random().toString(36).slice(2, 8);
 
 export function Onboarding() {
@@ -37,7 +37,7 @@ export function Onboarding() {
   const [flow, setFlow] = useState<SpendFlowResult | undefined>(undefined);
   const [statementBack, setStatementBack] = useState<Step>('noEmails');
   const set = (p: Partial<Draft>) => setDraft((d) => ({ ...d, ...p }));
-  const n = ORDER.indexOf(step as Step) + 1;
+  const n = ORDER.indexOf(step as Step) + 3; // the amount and category screens are steps 1 and 2
   const back = () => setStep(ORDER[Math.max(0, ORDER.indexOf(step) - 1)] ?? 'hello');
   const next = () => setStep(ORDER[ORDER.indexOf(step) + 1] ?? 'ready');
 
@@ -114,7 +114,7 @@ function EnvCard({ style, label, value, red }: { style: object; label: string; v
 /* ---------- Step 1 ---------- */
 function Intro({ onBack, onManual, onStatement, onAllow, busy, message }: { onBack: () => void; onManual: () => void; onStatement: () => void; onAllow: () => void; busy: boolean; message: string | null }) {
   return (
-    <StepFrame step={1} title="Let your bank emails do the typing" subtitle="xypa can read the payment emails your bank already sends and sort them for you." onBack={onBack}
+    <StepFrame step={3} title="Let your bank emails do the typing" subtitle="xypa can read the payment emails your bank already sends and sort them for you." onBack={onBack}
       footer={<>
         <BigButton title="Allow Gmail access" disabled={busy} onPress={onAllow} />
         {message ? <Text style={s.soon} accessibilityLiveRegion="polite">{message}</Text> : <Text style={s.soon}>Read only. Bank senders only.</Text>}
@@ -317,10 +317,10 @@ function Ready({ draft, assigned, onOpen, onRestart }: { draft: Draft; assigned:
       <View style={{ flex: 1, justifyContent: 'center' }}>
         <Text style={s.readyLogo}>xypa</Text>
         <Text style={s.readyTitle} accessibilityRole="header">Your plan is ready</Text>
-        <View style={s.dark}><Text style={s.darkL}>Safe to spend today</Text><Text style={s.darkBig}>{formatMoney(safe)}</Text><Text style={s.darkL}>{tr('Everyday envelopes ÷ {0} days left', days)}</Text></View>
+        <PopIn style={s.dark}><Text style={s.darkL}>Safe to spend today</Text><Text style={s.darkBig}>{formatMoney(safe)}</Text><Text style={s.darkL}>{tr('Everyday envelopes ÷ {0} days left', days)}</Text></PopIn>
         <View style={s.two}>
-          <View style={s.glass}><Text style={s.rowN}>Envelopes</Text><Text style={s.cardMid}>{envCount}</Text></View>
-          <View style={s.glass}><Text style={s.rowN}>Assigned</Text><Text style={s.cardMid}>{formatMoney(assignedTotal(assigned))}</Text></View>
+          <PopIn delay={120} style={s.glass}><Text style={s.rowN}>Envelopes</Text><Text style={s.cardMid}>{envCount}</Text></PopIn>
+          <PopIn delay={220} style={s.glass}><Text style={s.rowN}>Assigned</Text><Text style={s.cardMid}>{formatMoney(assignedTotal(assigned))}</Text></PopIn>
         </View>
         {regularCount ? <View style={s.glassWide}><Text style={s.noteText}>{tr('We\'ll remind you a day before your {0} regular payments go out.', regularCount)}</Text></View> : null}
         <View style={s.glassWide}><Text style={s.noteText}>If an envelope runs over, move money from another one. Whatever you don't spend rolls into next month.</Text></View>
@@ -364,7 +364,7 @@ const s = StyleSheet.create({
   totalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderTopWidth: 1.5, borderTopColor: ob.ink, marginTop: 14, paddingTop: 14 },
   totalL: { fontFamily: font.medium, fontSize: 17, color: ob.ink },
   totalV: { fontFamily: font.medium, fontSize: 26, letterSpacing: -0.8, color: ob.ink },
-  note: { backgroundColor: '#EEEBE5', borderRadius: 18, padding: 16, marginTop: 16 },
+  note: { backgroundColor: 'rgba(27,42,138,0.07)', borderRadius: 18, padding: 16, marginTop: 16 },
   noteText: { fontFamily: font.regular, fontSize: 16, lineHeight: 23, color: ob.ink },
   form: { gap: 12, marginTop: 16 },
   kinds: { flexDirection: 'row', gap: 8 },
@@ -384,9 +384,9 @@ const s = StyleSheet.create({
   filledNote: { fontFamily: font.regular, fontSize: 14, color: colors.accentInk, marginTop: 10, lineHeight: 20 },
   readyLogo: { fontFamily: font.medium, fontSize: 44, letterSpacing: -1.5, color: ob.ink, textAlign: 'center' },
   readyTitle: { fontFamily: font.medium, fontSize: 30, letterSpacing: -1, color: ob.ink, textAlign: 'center', marginTop: 6, marginBottom: 14 },
-  dark: { backgroundColor: ob.ink, borderRadius: 24, padding: 20, gap: 6 },
-  darkL: { fontFamily: font.regular, fontSize: 15, color: '#E8E4DC' },
+  dark: { backgroundColor: ob.navy, borderRadius: 28, padding: 22, gap: 6 },
+  darkL: { fontFamily: font.regular, fontSize: 15, color: '#D6DCF5' },
   darkBig: { fontFamily: font.medium, fontSize: 38, letterSpacing: -1.4, color: colors.white },
-  glass: { flex: 1, backgroundColor: 'rgba(255,255,255,0.55)', borderRadius: 20, padding: 16, borderWidth: 1, borderColor: 'rgba(0,0,0,0.08)' },
-  glassWide: { backgroundColor: 'rgba(255,255,255,0.4)', borderRadius: 20, padding: 16, marginTop: 10 },
+  glass: { flex: 1, backgroundColor: 'rgba(255,255,255,0.8)', borderRadius: 20, padding: 16, borderWidth: 1, borderColor: 'rgba(0,0,0,0.08)' },
+  glassWide: { backgroundColor: 'rgba(255,255,255,0.8)', borderRadius: 20, padding: 16, marginTop: 10 },
 });

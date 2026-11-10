@@ -6,7 +6,7 @@ import { scanGmail } from '../../api/client';
 import { colors, font } from '../../design/tokens';
 import { formatMoney } from '../../logic/money';
 import { draftFromScan, Found } from '../../logic/scan';
-import { BigButton, ob, Poster, StepFrame } from './ui';
+import { BigButton, ob, PopIn, Poster, StepFrame } from './ui';
 
 type Line = { text: string; done: boolean };
 
@@ -48,7 +48,7 @@ export function Reading({ onDone, onFail }: { onDone: (found: Found[]) => void; 
   }, [attempt]);
 
   return (
-    <Poster bg="#AFB1E7" glowA="#D3B9EC" glowB="#8F94DB">
+    <Poster>
       <View style={{ flex: 1, justifyContent: 'center' }}>
         <Text style={s.t} accessibilityRole="header">Reading your bank emails</Text>
         <Text style={s.sub}>The last 3 months. Only emails from banks.</Text>
@@ -63,7 +63,7 @@ export function Reading({ onDone, onFail }: { onDone: (found: Found[]) => void; 
             {lines.length === 0 ? (
               <View style={s.row}><ActivityIndicator color={ob.ink} /><Text style={s.line}>{progress.total ? tr('Read {0} of {1}', progress.read, progress.total) : 'Looking for bank emails…'}</Text></View>
             ) : lines.map((l) => (
-              <View key={l.text} style={s.row}><View style={s.tick}><Text style={s.tickT}>✓</Text></View><Text style={s.line}>{l.text}</Text></View>
+              <PopIn key={l.text} style={s.row}><View style={s.tick}><Text style={s.tickT}>✓</Text></View><Text style={s.line}>{l.text}</Text></PopIn>
             ))}
           </View>
         )}
@@ -81,7 +81,7 @@ export function NoEmails({ onBack, onStatement, onAlerts, onManual, onOtherAccou
     </Pressable>
   );
   return (
-    <StepFrame step={1} title="We didn't find any bank emails" subtitle="That's okay. Pick what works for you." onBack={onBack}
+    <StepFrame step={3} title="We didn't find any bank emails" subtitle="That's okay. Pick what works for you." onBack={onBack}
       footer={<Pressable accessibilityRole="button" accessibilityLabel={tr('Try another account')} onPress={onOtherAccount} style={s.link}><Text style={s.linkT}>Try another account</Text></Pressable>}>
       <View style={{ gap: 10, marginTop: 6 }}>
         {opt('Upload a statement', 'Your last 3 months from your bank app, as PDF, Excel or CSV.', onStatement, true)}
@@ -94,7 +94,7 @@ export function NoEmails({ onBack, onStatement, onAlerts, onManual, onOtherAccou
 
 export function EmailAlerts({ onBack, onStatement, onManual }: { onBack: () => void; onStatement: () => void; onManual: () => void }) {
   return (
-    <StepFrame step={1} title="Turn on email alerts" subtitle="Ask your bank to send payment notifications to the same Gmail address you signed in with." onBack={onBack}
+    <StepFrame step={3} title="Turn on email alerts" subtitle="Ask your bank to send payment notifications to the same Gmail address you signed in with." onBack={onBack}
       footer={<><BigButton title="Upload a statement as well" onPress={onStatement} /><Pressable accessibilityRole="button" accessibilityLabel={tr('I\'ll add things myself')} onPress={onManual} style={s.link}><Text style={s.linkT}>I'll add things myself</Text></Pressable></>}>
       <View style={s.card}>
         {['Open your bank app and find the notification or alert settings.', 'Turn on email notifications for card payments and transfers.', 'Use the same Gmail address you signed in to xypa with.'].map((t, i) => (
