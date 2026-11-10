@@ -171,7 +171,10 @@ function mount(app, { pool }) {
   // Scanning is split into small calls (list ids, then parse batches) so each one stays well inside serverless time limits.
   app.get('/v2/scan/ids', authed(async (req, res) => {
     const gmail = gmailFor(req.user);
-    const r = await gmail.users.messages.list({ userId: 'me', q: SCAN_QUERY, maxResults: 200, pageToken: req.query.page || undefined });
+    // `after` (unix seconds) turns the 93-day scan into an incremental one: only mail newer than the last sync.
+    const after = Number.parseInt(req.query.after, 10);
+    const q = Number.isFinite(after) && after > 0 ? SCAN_QUERY.replace('newer_than:93d', `after:${after}`) : SCAN_QUERY;
+    const r = await gmail.users.messages.list({ userId: 'me', q, maxResults: 200, pageToken: req.query.page || undefined });
     res.json({ ids: (r.data.messages || []).map((m) => m.id), next: r.data.nextPageToken || null });
   }));
 
