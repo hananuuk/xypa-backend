@@ -84,7 +84,7 @@ export function SettingsScreen() {
       </Block>
       <Block padding={false} style={s.block}>
         <Title t="BUDGET" />
-        <Row label="Currency" value={`${cur.name} ${cur.symbol}`} onPress={() => nav.openSheet({ name: 'currency' })} />
+        <Row label="Currency" value={`${tr(cur.name)} ${cur.symbol}`} onPress={() => nav.openSheet({ name: 'currency' })} />
         <Row label="Language" value={(st.language ?? deviceLang()) === 'mn' ? 'Монгол' : 'English'} onPress={() => nav.openSheet({ name: 'language' })} />
         <InnerCard style={s.row}><Text style={s.label}>Safe to spend uses</Text><Text style={s.value}>Everyday</Text></InnerCard>
       </Block>
@@ -111,10 +111,10 @@ const s = StyleSheet.create({
   block: { padding: 6, gap: 5 },
   section: { fontFamily: font.regular, fontSize: 12, letterSpacing: 0.6, color: colors.muted, paddingHorizontal: 12, paddingTop: 10, paddingBottom: 4 },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 56, gap: 12 },
-  label: { fontFamily: font.regular, fontSize: 16, color: colors.ink },
-  right: { flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 1 },
-  value: { fontFamily: font.regular, fontSize: 15, color: colors.muted, flexShrink: 1 },
-  track: { width: 52, height: 30, borderRadius: 15, padding: 3, justifyContent: 'center' },
+  label: { fontFamily: font.regular, fontSize: 16, color: colors.ink, flexShrink: 1 },
+  right: { flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 0, maxWidth: '55%' },
+  value: { fontFamily: font.regular, fontSize: 15, color: colors.muted, flexShrink: 1, textAlign: 'right', maxWidth: '55%' },
+  track: { flexShrink: 0, width: 52, height: 30, borderRadius: 15, padding: 3, justifyContent: 'center' },
   knob: { width: 24, height: 24, borderRadius: 12, backgroundColor: colors.white },
   hint: { fontFamily: font.regular, fontSize: 13, lineHeight: 19, color: colors.muted, paddingHorizontal: 12, paddingBottom: 10 },
 });

@@ -64,7 +64,7 @@ import { formatMoney } from '../../logic/money';
 const needsText = (n: number) => formatMoney(n);
 
 const s = StyleSheet.create({
-  label: { fontFamily: font.regular, fontSize: 13, color: colors.muted },
+  label: { fontFamily: font.regular, fontSize: 13, color: colors.muted, flexShrink: 1 },
   hero: { fontFamily: font.regular, fontSize: 44, letterSpacing: -1.8, color: colors.ink, marginTop: 4 },
   track: { height: 6, borderRadius: 3, backgroundColor: colors.gaugeTrack, overflow: 'hidden', marginTop: 12 },
   fill: { height: 6, borderRadius: 3 },

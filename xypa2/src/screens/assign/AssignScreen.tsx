@@ -92,6 +92,6 @@ const s = StyleSheet.create({
   rowTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 10, flexShrink: 1 },
   dot: { width: 10, height: 10, borderRadius: 5 },
-  name: { fontFamily: font.regular, fontSize: 16, color: colors.ink },
+  name: { fontFamily: font.regular, fontSize: 16, color: colors.ink, flexShrink: 1 },
   input: { fontFamily: font.medium, fontSize: 18, color: colors.ink, textAlign: 'right', minWidth: 110, minHeight: 44, backgroundColor: colors.white, borderRadius: 14, paddingHorizontal: 12, fontVariant: ['tabular-nums'] },
 });

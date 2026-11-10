@@ -71,7 +71,7 @@ const s = StyleSheet.create({
   block: { backgroundColor: colors.block, borderRadius: radius.block },
   blockPad: { paddingVertical: space.blockV, paddingHorizontal: space.blockH },
   inner: { backgroundColor: colors.inner, borderRadius: radius.inner, padding: 13 },
-  pillBar: { backgroundColor: colors.block, borderRadius: radius.pill, minHeight: 54, paddingHorizontal: 18, paddingVertical: 7, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  pillBar: { minHeight: 54, paddingHorizontal: 8, paddingVertical: 7, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   pillLeft: { flexShrink: 1 },
   pillRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   iconBtn: { width: 40, height: 40, minWidth: MIN_TARGET - 4, borderRadius: 20, backgroundColor: colors.chip, alignItems: 'center', justifyContent: 'center' },

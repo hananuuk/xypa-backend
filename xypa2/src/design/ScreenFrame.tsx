@@ -12,7 +12,7 @@ export function ScreenFrame({ title, onBack, right, children, footer, scroll = t
 }) {
   const insets = useSafeAreaInsets();
   const body = scroll
-    ? <ScrollView style={s.fill} contentContainerStyle={[s.content, { paddingBottom: footer ? 24 : insets.bottom + 40 }]} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>{children}</ScrollView>
+    ? <ScrollView style={s.fill} contentContainerStyle={[s.content, { paddingBottom: footer ? 24 : insets.bottom + 110 }]} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>{children}</ScrollView>
     : <View style={[s.fill, s.content]}>{children}</View>;
   return (
     <View style={[s.fill, { paddingTop: insets.top + 8 }]}>

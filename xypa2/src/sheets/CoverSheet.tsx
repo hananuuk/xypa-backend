@@ -103,7 +103,7 @@ const s = StyleSheet.create({
   eyebrow: { fontFamily: font.regular, fontSize: 12, letterSpacing: 0.6, color: colors.muted, marginBottom: 8 },
   source: { marginBottom: 6, gap: 4 },
   srcTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 },
-  srcName: { fontFamily: font.regular, fontSize: 16, color: colors.ink },
+  srcName: { fontFamily: font.regular, fontSize: 16, color: colors.ink, flexShrink: 1 },
   srcAmt: { fontFamily: font.medium, fontSize: 18, color: colors.ink, fontVariant: ['tabular-nums'] },
   hint: { fontFamily: font.regular, fontSize: 13, color: colors.muted },
   remove: { fontFamily: font.regular, fontSize: 13, color: colors.accentInk, minHeight: 32, lineHeight: 32 },

@@ -30,7 +30,7 @@ export function CurrencySheet({ onClose }: { onClose: () => void }) {
     <BottomSheet visible title="Currency" onClose={onClose}>
       <View style={{ gap: 6 }}>
         {(Object.keys(CURRENCIES) as CurrencyCode[]).map((c) => (
-          <Option key={c} label={`${CURRENCIES[c].name} ${CURRENCIES[c].symbol}`} selected={cur === c} onPress={() => { st.setCurrencyCode(c); onClose(); }} />
+          <Option key={c} label={`${tr(CURRENCIES[c].name)} ${CURRENCIES[c].symbol}`} selected={cur === c} onPress={() => { st.setCurrencyCode(c); onClose(); }} />
         ))}
       </View>
       <Text style={[s.note, { marginTop: 12 }]}>This changes the symbol on your amounts. It doesn't convert them.</Text>
