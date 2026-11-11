@@ -82,7 +82,7 @@ type Store = Persisted & {
   importStatement: (found: Found[]) => ImportResult;
   setNotify: (k: 'overspend' | 'newTxns' | 'morning', v: boolean) => void;
   logOut: () => void;
-  completeOnboarding: (plan: { accounts: Account[]; envelopes: Envelope[]; txns?: Txn[] }) => void;
+  completeOnboarding: (plan: { accounts: Account[]; envelopes: Envelope[]; txns?: Txn[]; rules?: MerchantRule[] }) => void;
 };
 
 const Ctx = createContext<Store | null>(null);
@@ -225,7 +225,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     logOut: () => { setToast(null); setState({ ...defaults(), onboarded: false, profile: undefined }); },
     startOnboarding: () => setState((s) => ({ ...s, onboarded: false })),
     completeOnboarding: (plan) => setState((s) => ({
-      ...s, accounts: plan.accounts, envelopes: plan.envelopes, txns: plan.txns ?? [], goals: [], rules: [],
+      ...s, accounts: plan.accounts, envelopes: plan.envelopes, txns: plan.txns ?? [], goals: [], rules: plan.rules ?? [],
       homeOrder: ['notes', 'rta', 'safe', 'envs'], homeHidden: {}, checklist: { sort: false, cover: false, check: false, assign: false }, onboarded: true, lastSyncAt: s.profile?.gmail ? Date.now() : s.lastSyncAt,
     })),
     setHomeLayout: (order, hidden) => setState((s) => ({ ...s, homeOrder: order, homeHidden: hidden })),

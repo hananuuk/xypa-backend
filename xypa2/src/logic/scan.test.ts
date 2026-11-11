@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildPlan, emptyDraft } from './onboarding';
-import { detectAccounts, detectRegular, detectUsual, draftFromScan, Found, txnsFromScan, normalizeMerchant } from './scan';
+import { detectAccounts, detectRegular, detectUsual, draftFromScan, Found, txnsFromScan, normalizeMerchant, monthlySpend, recurringMerchants } from './scan';
 
 const f = (merchant: string, amount: number, date: string, extra: Partial<Found> = {}): Found => ({ bank: 'M bank', card: null, merchant, amount, type: 'spend', date, balance: null, ...extra });
 
@@ -61,5 +61,26 @@ describe('sureCategoryOf', () => {
     expect(sureCategoryOf('BARBER SHOP')).toBeNull();
     expect(sureCategoryOf('CENTRAL TOWER')).toBeNull();
     expect(sureCategoryOf('Ruby room burger')).toBe('Dining Out');
+  });
+});
+
+describe('recurring merchants and monthly spend', () => {
+  const mk = (merchant: string, date: string, amount = 1000, extra: object = {}) => ({ bank: 'M bank', card: null, merchant, amount, type: 'spend' as const, date, balance: null, ...extra });
+  const found = [
+    mk('EMART 12', '2026-09-03'), mk('EMART 14', '2026-09-20'), mk('EMART', '2026-10-02'), mk('Shell', '2026-10-05'), mk('Shell', '2026-10-09'),
+    mk('Transfer', '2026-10-10', 9000, { transfer: 'own' }),
+  ];
+  it('lists merchants paid more than twice, ignoring digits and transfers', () => {
+    const r = recurringMerchants(found);
+    expect(r.map((x) => x.key)).toEqual(['EMART']);
+    expect(r[0].count).toBe(3);
+    expect(r[0].suggested).toBe('Groceries');
+  });
+  it('sums spending per month without transfers', () => {
+    expect(monthlySpend(found)).toEqual([{ month: '2026-09', total: 2000 }, { month: '2026-10', total: 3000 }]);
+  });
+  it('an override moves a merchant into the chosen category', () => {
+    const u = detectUsual(found, [], 3, { SHELL: 'Fuel' });
+    expect(u.find((x) => x.name === 'Fuel')?.monthly).toBeGreaterThan(0);
   });
 });

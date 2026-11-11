@@ -68,6 +68,36 @@ export function detectRegular(found: Found[]): Regular[] {
   return out.sort((a, b) => b.monthly - a.monthly);
 }
 
+/** The person's own choice of category for a merchant, keyed by normalizeMerchant(merchant). */
+export type Overrides = Record<string, string>;
+
+export type RecurringMerchant = { key: string; merchant: string; count: number; total: number; suggested: string | null };
+
+/** Merchants paid more than twice in the scan (not already a regular payment, not a transfer), most frequent first. */
+export function recurringMerchants(found: Found[], minCount = 3, limit = 12): RecurringMerchant[] {
+  const regular = new Set(detectRegular(found).map((r) => r.id));
+  const by = new Map<string, RecurringMerchant>();
+  for (const f of found) {
+    if (f.type !== 'spend' || f.transfer) continue;
+    const key = normalizeMerchant(f.merchant);
+    if (!key || regular.has(key.toLowerCase().replace(/ /g, '-'))) continue;
+    const g = by.get(key) ?? { key, merchant: f.merchant.trim(), count: 0, total: 0, suggested: sureCategoryOf(f.merchant) };
+    g.count += 1; g.total += f.amount;
+    by.set(key, g);
+  }
+  return [...by.values()].filter((g) => g.count >= minCount).sort((a, b) => b.count - a.count || b.total - a.total).slice(0, limit);
+}
+
+/** Spending per calendar month (newest three), oldest first. Transfers are not spending. */
+export function monthlySpend(found: Found[]): { month: string; total: number }[] {
+  const by = new Map<string, number>();
+  for (const f of found) {
+    if (f.type !== 'spend' || f.transfer || !f.date) continue;
+    by.set(f.date.slice(0, 7), (by.get(f.date.slice(0, 7)) ?? 0) + f.amount);
+  }
+  return [...by.entries()].sort((a, b) => a[0].localeCompare(b[0])).slice(-3).map(([month, total]) => ({ month, total }));
+}
+
 const CATEGORIES: { name: string; words: string[] }[] = [
   { name: 'Groceries', words: ['supermarket', 'market', 'emart', 'nomin', 'minii delguur', 'grocery', 'shop', 'delguur', 'дэлгүүр'] },
   { name: 'Coffee', words: ['coffee', 'cafe', 'café', 'tom n toms', 'steppe', 'starbucks', 'tea', 'кофе'] },
@@ -96,13 +126,14 @@ export function categoryOf(merchant: string): string {
 }
 
 /** What you usually spend: 3-month average per category, leaving out the regular payments found above. */
-export function detectUsual(found: Found[], regular: Regular[], months = 3): Usual[] {
+export function detectUsual(found: Found[], regular: Regular[], months = 3, overrides: Overrides = {}): Usual[] {
   const regularKeys = new Set(regular.map((r) => r.id));
   const totals = new Map<string, { sum: number; n: number }>();
   for (const f of found) {
     if (f.type !== 'spend') continue;
     if (regularKeys.has(normalizeMerchant(f.merchant).toLowerCase().replace(/ /g, '-'))) continue;
-    const c = categoryOf(f.merchant);
+    if (f.transfer) continue;
+    const c = overrides[normalizeMerchant(f.merchant)] ?? categoryOf(f.merchant);
     if (c === 'Transfers') continue;
     const t = totals.get(c) ?? { sum: 0, n: 0 };
     totals.set(c, { sum: t.sum + f.amount, n: t.n + 1 });
@@ -114,13 +145,13 @@ export function detectUsual(found: Found[], regular: Regular[], months = 3): Usu
 }
 
 /** Everything the scan found, shaped as the onboarding draft. */
-export function draftFromScan(found: Found[]): Draft {
+export function draftFromScan(found: Found[], overrides: Overrides = {}): Draft {
   const regular = detectRegular(found);
-  return { ...emptyDraft(), accounts: detectAccounts(found), regular, usual: detectUsual(found, regular) };
+  return { ...emptyDraft(), accounts: detectAccounts(found), regular, usual: detectUsual(found, regular, 3, overrides) };
 }
 
 /** Turn what was found into transactions, filed into the envelopes made from the same scan (the rest stay unsorted for Review). */
-export function txnsFromScan(found: Found[], envelopes: Envelope[], accounts: Account[], month?: string): Txn[] {
+export function txnsFromScan(found: Found[], envelopes: Envelope[], accounts: Account[], month?: string, overrides: Overrides = {}): Txn[] {
   const byName = new Map(envelopes.map((e) => [e.name.toLowerCase(), e.id]));
   const byId = new Set(envelopes.map((e) => e.id));
   const bankId = (bank: string | null, account?: string) =>
@@ -135,7 +166,7 @@ export function txnsFromScan(found: Found[], envelopes: Envelope[], accounts: Ac
     let envelopeId: string | null = null;
     if (f.type === 'spend' && !f.transfer) {
       const reg = `reg-${normalizeMerchant(f.merchant).toLowerCase().replace(/ /g, '-')}`;
-      const sure = sureCategoryOf(f.merchant);
+      const sure = overrides[normalizeMerchant(f.merchant)] ?? sureCategoryOf(f.merchant);
       envelopeId = byId.has(reg) ? reg : sure ? byName.get(sure.toLowerCase()) ?? null : null;
     }
     return [{ id: f.gmailId ? `g-${f.gmailId}` : `s-${i}-${date}-${f.amount}`, envelopeId, merchant: f.merchant, amount: f.amount, type: f.type, date, accountId: bankId(f.bank, f.account), source: f.source ?? 'gmail', ...(f.transfer ? { kind: f.transfer } : {}) }];

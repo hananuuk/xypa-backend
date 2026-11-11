@@ -5,7 +5,7 @@ import * as Haptics from 'expo-haptics';
 import { tr } from '../../i18n';
 import { Text } from '../../design/Text';
 import { colors, font } from '../../design/tokens';
-import { groupDigits, pressKey, spokenParts } from '../../logic/amountInput';
+import { CATEGORY_CHOICES, groupDigits, pressKey, spokenParts } from '../../logic/amountInput';
 import { BigButton, ob, Poster, StepHeader } from './ui';
 
 const NAVY = '#1B2A8A';
@@ -35,7 +35,7 @@ function amountChars(digits: string): { key: string; ch: string }[] {
   return out;
 }
 
-const PRESETS = ['Groceries', 'Eating out', 'Coffee', 'Transport', 'Taxi', 'Shopping', 'Clothes', 'Health', 'Fitness', 'Entertainment', 'Education', 'Kids', 'Pets', 'Gifts', 'Beauty', 'Fuel'];
+const PRESETS = CATEGORY_CHOICES;
 
 /** A category chip that pops up from below, one after another. */
 function CatChip({ label, on, delay, play, onPress }: { label: string; on: boolean; delay: number; play: number; onPress: () => void }) {
@@ -55,19 +55,26 @@ function CatChip({ label, on, delay, play, onPress }: { label: string; on: boole
 
 export type SpendFlowResult = { monthlySpend: number; categories: string[] };
 
-/**
- * Two steps on one screen. First you type what you spend in a month. Then the amount floats up to the top
- * and shrinks, and you pick the categories that money goes to.
- */
-export function SpendFlowStep({ initial, onBack, onNext }: { initial?: SpendFlowResult; onBack: () => void; onNext: (r: SpendFlowResult) => void }) {
-  const [digits, setDigits] = useState(initial ? String(initial.monthlySpend) : '');
-  const [phase, setPhase] = useState<1 | 2>(initial ? 2 : 1);
-  const [cats, setCats] = useState<string[]>(initial?.categories ?? []);
+/** Step 1: type what you spend in a month, or skip it. */
+export const SpendAmountStep = (p: { initial?: number; onBack: () => void; onNext: (amount: number) => void; onSkip: () => void }) =>
+  <Flow mode="amount" amount={p.initial ?? 0} onBack={p.onBack} onAmount={p.onNext} onSkip={p.onSkip} />;
+
+/** Pick categories by hand. The amount (if given) sits small at the top. */
+export const SpendCategoriesStep = (p: { amount: number; initial?: string[]; onBack: () => void; onNext: (cats: string[]) => void }) =>
+  <Flow mode="categories" amount={p.amount} initialCats={p.initial} onBack={p.onBack} onCats={p.onNext} />;
+
+function Flow({ mode, amount = 0, initialCats, onBack, onAmount, onCats, onSkip }: {
+  mode: 'amount' | 'categories'; amount?: number; initialCats?: string[]; onBack: () => void;
+  onAmount?: (n: number) => void; onCats?: (c: string[]) => void; onSkip?: () => void;
+}) {
+  const phase: 1 | 2 = mode === 'amount' ? 1 : 2;
+  const [digits, setDigits] = useState(amount ? String(amount) : '');
+  const [cats, setCats] = useState<string[]>(initialCats ?? []);
   const [adding, setAdding] = useState(false);
   const [draftName, setDraftName] = useState('');
   const [topH, setTopH] = useState(0);
-  const [played, setPlayed] = useState(initial ? 1 : 0);
-  const p = useRef(new Animated.Value(initial ? 1 : 0)).current;
+  const [played] = useState(mode === 'categories' ? 1 : 0);
+  const p = useRef(new Animated.Value(mode === 'categories' ? 1 : 0)).current;
   const win = useWindowDimensions();
 
   const value = Number(digits || 0);
@@ -77,11 +84,6 @@ export function SpendFlowStep({ initial, onBack, onNext }: { initial?: SpendFlow
   const spoken = [million ? tr('{0} million', million) : '', thousand ? tr('{0} thousand', thousand) : '', rest && value >= 1000 ? String(rest) : ''].filter(Boolean).join(' ');
   const all = [...PRESETS, ...cats.filter((c) => !PRESETS.includes(c))];
 
-  const go = (to: 1 | 2) => {
-    setPhase(to); setAdding(false);
-    if (to === 2) setPlayed((n) => n + 1);
-    Animated.timing(p, { toValue: to === 2 ? 1 : 0, duration: 520, easing: Easing.inOut(Easing.cubic), useNativeDriver: true }).start();
-  };
   const press = (k: string) => {
     const next = pressKey(digits, k);
     if (next === digits) return;
@@ -110,7 +112,7 @@ export function SpendFlowStep({ initial, onBack, onNext }: { initial?: SpendFlow
         <Rect width={win.width} height={400} fill="url(#fade)" />
       </Svg>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <StepHeader step={phase} onBack={() => (phase === 2 ? go(1) : onBack())} />
+        <StepHeader step={mode === 'amount' ? 1 : 4} onBack={onBack} />
         <View>
           <Animated.View style={{ opacity: p.interpolate({ inputRange: [0, 0.5], outputRange: [1, 0], extrapolate: 'clamp' }) }}>
             <Text style={s.title} accessibilityRole="header">Let's work out your money flow first.</Text>
@@ -124,13 +126,13 @@ export function SpendFlowStep({ initial, onBack, onNext }: { initial?: SpendFlow
 
         <View style={{ flex: 1 }}>
           <View style={s.mid} onLayout={(e) => setTopH(e.nativeEvent.layout.height)}>
-            <Animated.View style={{ alignItems: 'center', transform: [{ translateY: p.interpolate({ inputRange: [0, 1], outputRange: [0, lift] }) }, { scale: p.interpolate({ inputRange: [0, 1], outputRange: [1, 0.55] }) }] }}>
+            {mode === 'amount' || amount > 0 ? <Animated.View style={{ alignItems: 'center', transform: [{ translateY: p.interpolate({ inputRange: [0, 1], outputRange: [0, lift] }) }, { scale: p.interpolate({ inputRange: [0, 1], outputRange: [1, 0.55] }) }] }}>
               <View style={s.amount} accessible accessibilityLabel={tr('{0} tögrög a month', groupDigits(digits || '0'))} accessibilityLiveRegion="polite">
                 {chars.length ? chars.map((c) => <Pop key={c.key} ch={c.ch} size={size} />) : <Text style={[s.zero, { fontSize: size }]}>0</Text>}
                 <Text style={[s.tug, { fontSize: size * 0.5 }]}>₮</Text>
               </View>
               <Animated.Text style={[s.spoken, { opacity: p.interpolate({ inputRange: [0, 0.4], outputRange: [1, 0], extrapolate: 'clamp' }) }]}>{spoken || ' '}</Animated.Text>
-            </Animated.View>
+            </Animated.View> : null}
           </View>
           <Animated.View pointerEvents={phase === 1 ? 'auto' : 'none'} style={[s.pad, { opacity: p.interpolate({ inputRange: [0, 0.6], outputRange: [1, 0], extrapolate: 'clamp' }), transform: [{ translateY: p.interpolate({ inputRange: [0, 1], outputRange: [0, 140] }) }] }]}>
             {KEYS.map((k, i) => k === '' ? <View key={i} style={s.key} /> : (
@@ -155,13 +157,18 @@ export function SpendFlowStep({ initial, onBack, onNext }: { initial?: SpendFlow
             </ScrollView>
           </Animated.View>
         </View>
-        <BigButton title="Continue" disabled={phase === 1 ? value <= 0 : cats.length === 0} onPress={() => (phase === 1 ? go(2) : onNext({ monthlySpend: value, categories: cats }))} />
+        <BigButton title="Continue" disabled={phase === 1 ? value <= 0 : cats.length === 0} onPress={() => (phase === 1 ? onAmount?.(value) : onCats?.(cats))} />
+        {mode === 'amount' ? (
+          <Pressable accessibilityRole="button" accessibilityLabel={tr('Rather not say')} onPress={onSkip} style={s.skip}><Text style={s.skipText}>Rather not say</Text></Pressable>
+        ) : <View style={{ height: 8 }} />}
       </KeyboardAvoidingView>
     </Poster>
   );
 }
 
 const s = StyleSheet.create({
+  skip: { minHeight: 48, alignItems: 'center', justifyContent: 'center' },
+  skipText: { fontFamily: font.medium, fontSize: 16, color: ob.ink, textDecorationLine: 'underline' },
   title: { fontFamily: font.medium, fontSize: 32, lineHeight: 38, letterSpacing: -1, color: ob.ink, marginTop: 8 },
   ask: { fontFamily: font.regular, fontSize: 14, lineHeight: 20, color: ob.ink, opacity: 0.7, marginTop: 10 },
   mid: { flex: 1, justifyContent: 'center', alignItems: 'center', minHeight: 110 },

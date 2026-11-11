@@ -22,3 +22,6 @@ export function usualFromCategories(cats: string[], monthly: number): { id: stri
   const each = cats.length ? Math.floor(monthly / cats.length / 1000) * 1000 : 0;
   return cats.map((name, i) => ({ id: `cat-${i}-${name.toLowerCase().replace(/\W+/g, '-')}`, name, monthly: each, on: true }));
 }
+
+/** Spending categories offered in onboarding. Names match what the scan detects. */
+export const CATEGORY_CHOICES = ['Groceries', 'Dining Out', 'Coffee', 'Transport', 'Taxi', 'Shopping', 'Clothes', 'Health', 'Fitness', 'Entertainment', 'Education', 'Kids', 'Pets', 'Gifts', 'Beauty', 'Fuel'];

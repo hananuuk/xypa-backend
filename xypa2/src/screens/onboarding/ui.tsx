@@ -76,7 +76,7 @@ const a = StyleSheet.create({
   input: { fontFamily: font.medium, fontSize: 17, textAlign: 'right', color: ob.ink, backgroundColor: colors.white, borderRadius: 16, borderWidth: 1, borderColor: colors.line, minHeight: 48, paddingHorizontal: 16, fontVariant: ['tabular-nums'] },
 });
 
-export const TOTAL_STEPS = 8;
+export const TOTAL_STEPS = 9;
 
 /** Back button and the segmented progress bar. */
 export function StepHeader({ step, onBack }: { step: number; onBack: () => void }) {

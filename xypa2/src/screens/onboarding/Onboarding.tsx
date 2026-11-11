@@ -14,16 +14,18 @@ import {
   assignedTotal, buildPlan, Draft, emptyDraft, fillWhatFits, monthCost, moneyToPlan, prefill, regularTotal, usualTotal, wants, yearlyMonthly,
 } from '../../logic/onboarding';
 import { monthlySaving } from '../../logic/budget';
-import { draftFromScan, Found, txnsFromScan } from '../../logic/scan';
+import { draftFromScan, Found, normalizeMerchant, Overrides, recurringMerchants, txnsFromScan } from '../../logic/scan';
 import { useStore } from '../../store/store';
-import { SpendFlowResult, SpendFlowStep } from './SpendFlowStep';
+import { SpendAmountStep, SpendCategoriesStep } from './SpendFlowStep';
+import { AlertQuestion, AskStatement, Categorize, FoundSummary, Pick } from './FlowSteps';
 import { usualFromCategories } from '../../logic/amountInput';
 import { StatementStep } from './StatementStep';
 import { EmailAlerts, NoEmails, Reading } from './GmailSteps';
 import { AmountInput, BigButton, CostFooter, DashedAdd, ob, PopIn, Poster, SectionHead, StepFrame, Switch } from './ui';
 
-type Step = 'hello' | 'flow' | 'intro' | 'reading' | 'noEmails' | 'alerts' | 'statement' | 'accounts' | 'regular' | 'usual' | 'yearly' | 'assign' | 'ready';
-const ORDER: Step[] = ['intro', 'accounts', 'regular', 'usual', 'yearly', 'assign'];
+/** hello → spend → alertQ → (yes) intro → reading → found → categorize | (no) askStatement → statement → found | cats → accounts … */
+type Step = 'hello' | 'spend' | 'alertQ' | 'askStatement' | 'cats' | 'found' | 'categorize' | 'intro' | 'reading' | 'noEmails' | 'alerts' | 'statement' | 'accounts' | 'regular' | 'usual' | 'yearly' | 'assign' | 'ready';
+const ORDER: Step[] = ['accounts', 'regular', 'usual', 'yearly', 'assign'];
 const uid = () => Math.random().toString(36).slice(2, 8);
 
 export function Onboarding() {
@@ -34,23 +36,22 @@ export function Onboarding() {
   const [found, setFound] = useState<Found[]>([]);
   const [authMsg, setAuthMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [flow, setFlow] = useState<SpendFlowResult | undefined>(undefined);
+  const [monthly, setMonthly] = useState(0);
+  const [cats, setCats] = useState<string[]>([]);
+  const [picks, setPicks] = useState<Pick[]>([]);
   const [statementBack, setStatementBack] = useState<Step>('noEmails');
   const set = (p: Partial<Draft>) => setDraft((d) => ({ ...d, ...p }));
-  const n = ORDER.indexOf(step as Step) + 3; // the amount and category screens are steps 1 and 2
-  const back = () => setStep(ORDER[Math.max(0, ORDER.indexOf(step) - 1)] ?? 'hello');
+  const n = ORDER.indexOf(step as Step) + 5; // amount, alert question, mail/statement and the categories come first
+  const recurring = recurringMerchants(found);
+  const overrides: Overrides = Object.fromEntries(picks.map((p) => [p.key, p.category]));
+  const back = () => setStep(ORDER.indexOf(step) > 0 ? ORDER[ORDER.indexOf(step) - 1] : found.length ? (recurring.length ? 'categorize' : 'found') : 'cats');
   const next = () => setStep(ORDER[ORDER.indexOf(step) + 1] ?? 'ready');
 
-  /** Set up by hand: start the "usual spending" list from the categories picked earlier. */
-  const manual = () => {
-    setDraft((d) => (d.usual.length || !flow?.categories.length ? d : { ...d, usual: usualFromCategories(flow.categories, flow.monthlySpend) }));
-    setStep('accounts');
-  };
   const signIn = async () => {
     setBusy(true); setAuthMsg(null);
     const r = await authenticate('signin');
     setBusy(false);
-    if (r.ok) { st.setSession(r.me); setStep('flow'); } else if (r.reason !== 'cancelled') setAuthMsg(r.message ? tr('Sign-in didn\'t work: {0}. Try again.', r.message) : tr('Sign-in didn\'t work. Try again.'));
+    if (r.ok) { st.setSession(r.me); setStep('spend'); } else if (r.reason !== 'cancelled') setAuthMsg(r.message ? tr('Sign-in didn\'t work: {0}. Try again.', r.message) : tr('Sign-in didn\'t work. Try again.'));
   };
   const allowGmail = async () => {
     setBusy(true); setAuthMsg(null);
@@ -64,18 +65,28 @@ export function Onboarding() {
   const useFound = (f: Found[]) => {
     setFound(f);
     if (f.length === 0) { setStep('noEmails'); return; }
+    setPicks([]);
     setDraft(draftFromScan(f));
-    setStep('accounts');
+    setStep('found');
   };
 
   if (step === 'hello') return <Hello onStart={signIn} busy={busy} message={authMsg} />;
-  if (step === 'flow') return <SpendFlowStep initial={flow} onBack={() => setStep('hello')} onNext={(r) => { setFlow(r); setStep('intro'); }} />;
-  if (step === 'reading') return <Reading onDone={useFound} onFail={manual} />;
-  if (step === 'noEmails') return <NoEmails onBack={() => setStep('intro')} onStatement={() => { setStatementBack('noEmails'); setStep('statement'); }} onAlerts={() => setStep('alerts')} onManual={manual} onOtherAccount={otherAccount} />;
+  if (step === 'spend') return <SpendAmountStep initial={monthly} onBack={() => setStep('hello')} onNext={(a) => { setMonthly(a); setStep('alertQ'); }} onSkip={() => { setMonthly(0); setStep('alertQ'); }} />;
+  if (step === 'alertQ') return <AlertQuestion onBack={() => setStep('spend')} onYes={() => setStep('intro')} onNo={() => setStep('askStatement')} />;
+  if (step === 'askStatement') return <AskStatement onBack={() => setStep('alertQ')} onYes={() => { setStatementBack('askStatement'); setStep('statement'); }} onNo={() => setStep('cats')} />;
+  if (step === 'cats') return <SpendCategoriesStep amount={monthly} initial={cats} onBack={() => setStep('askStatement')} onNext={(c) => { setCats(c); setDraft((d) => ({ ...d, usual: usualFromCategories(c, monthly) })); setFound([]); setPicks([]); setStep('accounts'); }} />;
+  if (step === 'found') return <FoundSummary found={found} recurring={recurring.length} onBack={() => setStep('alertQ')} onNext={() => setStep(recurring.length ? 'categorize' : 'accounts')} />;
+  if (step === 'categorize') return <Categorize items={recurring} onBack={() => setStep('found')} onNext={(p) => { setPicks(p); setDraft(draftFromScan(found, Object.fromEntries(p.map((x) => [x.key, x.category])))); setStep('accounts'); }} />;
+  if (step === 'reading') return <Reading onDone={useFound} onFail={() => setStep('askStatement')} />;
+  if (step === 'noEmails') return <NoEmails onBack={() => setStep('intro')} onStatement={() => { setStatementBack('noEmails'); setStep('statement'); }} onAlerts={() => setStep('alerts')} onManual={() => setStep('cats')} onOtherAccount={otherAccount} />;
   if (step === 'statement') return <StatementStep onBack={() => setStep(statementBack)} onRead={useFound} />;
-  if (step === 'alerts') return <EmailAlerts onBack={() => setStep('noEmails')} onStatement={() => setStep('statement')} onManual={manual} />;
-  if (step === 'ready') return <Ready draft={draft} assigned={assigned} onOpen={() => { const plan = buildPlan(draft, assigned); st.completeOnboarding({ ...plan, txns: txnsFromScan(found, plan.envelopes, plan.accounts, st.today.month) }); }} onRestart={() => { setDraft(emptyDraft()); setAssigned({}); setFound([]); setStep('hello'); }} />;
-  if (step === 'intro') return <Intro onBack={() => setStep('flow')} onManual={() => { setFound([]); manual(); }} onStatement={() => { setStatementBack('intro'); setStep('statement'); }} onAllow={allowGmail} busy={busy} message={authMsg} />;
+  if (step === 'alerts') return <EmailAlerts onBack={() => setStep('noEmails')} onStatement={() => setStep('statement')} onManual={() => setStep('cats')} />;
+  if (step === 'ready') return <Ready draft={draft} assigned={assigned} onOpen={() => {
+      const plan = buildPlan(draft, assigned);
+      const rules = picks.flatMap((p) => { const e = plan.envelopes.find((x) => x.name.toLowerCase() === p.category.toLowerCase()); return e ? [{ merchant: p.merchant, envelopeId: e.id, contains: true }] : []; });
+      st.completeOnboarding({ ...plan, rules, txns: txnsFromScan(found, plan.envelopes, plan.accounts, st.today.month, overrides) });
+    }} onRestart={() => { setDraft(emptyDraft()); setAssigned({}); setFound([]); setPicks([]); setCats([]); setMonthly(0); setStep('hello'); }} />;
+  if (step === 'intro') return <Intro onBack={() => setStep('alertQ')} onStatement={() => { setStatementBack('intro'); setStep('statement'); }} onAllow={allowGmail} busy={busy} message={authMsg} />;
   if (step === 'accounts') return <Accounts n={n} draft={draft} set={set} onBack={back} onNext={next} />;
   if (step === 'regular') return <Regular n={n} draft={draft} set={set} onBack={back} onNext={next} />;
   if (step === 'usual') return <Usual n={n} draft={draft} set={set} onBack={back} onNext={next} />;
@@ -112,14 +123,13 @@ function EnvCard({ style, label, value, red }: { style: object; label: string; v
 }
 
 /* ---------- Step 1 ---------- */
-function Intro({ onBack, onManual, onStatement, onAllow, busy, message }: { onBack: () => void; onManual: () => void; onStatement: () => void; onAllow: () => void; busy: boolean; message: string | null }) {
+function Intro({ onBack, onStatement, onAllow, busy, message }: { onBack: () => void; onStatement: () => void; onAllow: () => void; busy: boolean; message: string | null }) {
   return (
-    <StepFrame step={3} title="Let your bank emails do the typing" subtitle="xypa can read the payment emails your bank already sends and sort them for you." onBack={onBack}
+    <StepFrame step={3} title="Let xypa read your bank emails?" subtitle="It reads the payment emails your bank already sends and sorts them for you." onBack={onBack}
       footer={<>
-        <BigButton title="Allow Gmail access" disabled={busy} onPress={onAllow} />
+        <BigButton title="Yes, allow Gmail access" disabled={busy} onPress={onAllow} />
         {message ? <Text style={s.soon} accessibilityLiveRegion="polite">{message}</Text> : <Text style={s.soon}>Read only. Bank senders only.</Text>}
         <Pressable accessibilityRole="button" accessibilityLabel={tr('Upload a statement instead')} onPress={onStatement} style={s.link}><Text style={s.linkText}>Upload a statement instead</Text></Pressable>
-        <Pressable accessibilityRole="button" accessibilityLabel={tr('I\'ll set things up myself')} onPress={onManual} style={s.link}><Text style={s.linkText}>I'll set things up myself</Text></Pressable>
       </>}>
       <SectionHead title="XYPA CAN" />
       {['Read your bank emails', 'Find your regular payments', 'Sort your spending'].map((t) => <Text key={t} style={s.li}>✓  {t}</Text>)}
