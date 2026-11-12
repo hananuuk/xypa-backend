@@ -8,7 +8,7 @@ import { formatMoney } from '../../logic/money';
 import { monthlySpend, RecurringMerchant } from '../../logic/scan';
 import type { Found } from '../../logic/scan';
 import { monthName } from '../../store/calendar';
-import { BankEmailAnimation } from './BankEmailAnimation';
+import { BankNotificationAnimation } from './BankNotificationAnimation';
 import { BigButton, DashedAdd, ob, StepFrame } from './ui';
 
 const Link = ({ title, onPress }: { title: string; onPress: () => void }) => (
@@ -20,8 +20,7 @@ export function AlertQuestion({ onBack, onYes, onNo }: { onBack: () => void; onY
   return (
     <StepFrame step={2} title="Does your bank email you when you pay?" subtitle="Most banks can send an email every time money moves, like “Card payment 12,000₮ at EMART”." onBack={onBack}
       footer={<><BigButton title="Yes, I get alerts" onPress={onYes} /><Link title="No, I don't" onPress={onNo} /></>}>
-      <Text style={s.body}>If you do, xypa can read those emails and fill in your spending for you. If you don't, a bank statement works just as well.</Text>
-      <View style={s.art}><BankEmailAnimation /></View>
+      <BankNotificationAnimation />
     </StepFrame>
   );
 }
