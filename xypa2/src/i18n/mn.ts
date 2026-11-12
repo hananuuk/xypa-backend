@@ -1,4 +1,8 @@
 export const mn: Record<string, string> = {
+  "Bank notifications arriving, like Card payment 48,600₮ at Nomin Supermarket": "Банкны мэдэгдлүүд ирж байна, жишээ нь Картын төлбөр 48,600₮, Nomin Supermarket",
+  "Card payment 7,500₮ at Tom N Toms Coffee": "Картын төлбөр 7,500₮, Tom N Toms Coffee",
+  "Card payment 32,000₮ at Shell": "Картын төлбөр 32,000₮, Shell",
+  "Golomt Bank": "Голомт банк",
   "A bank notification arriving: Card payment 48,600₮ at Nomin Supermarket": "Банкнаас ирж буй мэдэгдэл: Картын төлбөр 48,600₮, Nomin Supermarket",
   "Animation: a bank notification arrives, opens into the full email, xypa reads the amount, shop and time, and the payment appears in xypa filed under Groceries.": "Анимаци: банкнаас мэдэгдэл ирж, имэйл болон нээгдэнэ. xypa дүн, дэлгүүр, цагийг уншаад гүйлгээг Хүнс дугтуйнд хийнэ.",
   "Play animation": "Анимаци тоглуулах",

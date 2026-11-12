@@ -94,7 +94,7 @@ export function StepHeader({ step, onBack }: { step: number; onBack: () => void 
 }
 
 /** Step layout: back button, progress, title, a frosted card with the content, pinned footer. */
-export function StepFrame({ step, title, subtitle, onBack, children, footer }: { step: number; title: string; subtitle?: string; onBack: () => void; children: React.ReactNode; footer: React.ReactNode }) {
+export function StepFrame({ step, title, subtitle, onBack, children, footer, art }: { step: number; title: string; subtitle?: string; onBack: () => void; children?: React.ReactNode; footer: React.ReactNode; art?: React.ReactNode }) {
   const insets = useSafeAreaInsets();
   return (
     <View style={{ flex: 1, backgroundColor: '#FFFFFF', paddingTop: insets.top + 8 }}>
@@ -103,7 +103,8 @@ export function StepFrame({ step, title, subtitle, onBack, children, footer }: {
       <ScrollView contentContainerStyle={sf.body} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         <Text style={sf.title} accessibilityRole="header">{title}</Text>
         {subtitle ? <Text style={sf.sub}>{subtitle}</Text> : null}
-        <View style={sf.glass}>{children}</View>
+        {art ? <View style={{ marginTop: 18 }}>{art}</View> : null}
+        {children ? <View style={sf.glass}>{children}</View> : null}
       </ScrollView>
       <View style={[sf.footer, { paddingBottom: Math.max(insets.bottom, 12) + 4 }]}>{footer}</View>
     </View>

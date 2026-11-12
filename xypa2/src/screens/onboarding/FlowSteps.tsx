@@ -19,9 +19,8 @@ const Link = ({ title, onPress }: { title: string; onPress: () => void }) => (
 export function AlertQuestion({ onBack, onYes, onNo }: { onBack: () => void; onYes: () => void; onNo: () => void }) {
   return (
     <StepFrame step={2} title="Does your bank email you when you pay?" subtitle="Most banks can send an email every time money moves, like “Card payment 12,000₮ at EMART”." onBack={onBack}
-      footer={<><BigButton title="Yes, I get alerts" onPress={onYes} /><Link title="No, I don't" onPress={onNo} /></>}>
-      <BankNotificationAnimation />
-    </StepFrame>
+      art={<BankNotificationAnimation />}
+      footer={<><BigButton title="Yes, I get alerts" onPress={onYes} /><Link title="No, I don't" onPress={onNo} /></>} />
   );
 }
 
