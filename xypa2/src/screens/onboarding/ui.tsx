@@ -9,14 +9,14 @@ import { colors, font } from '../../design/tokens';
 import { formatMoney, parseMoney } from '../../logic/money';
 
 export const ob = { page: '#FAF8F4', ink: '#1C1915', pink: '#F3BAB2', navy: '#1B2A8A' };
-const FLOW_BG = require('../../../assets/flow-bg.jpg');
+const BG = { blob: require('../../../assets/bg-blob.jpg'), swirl: require('../../../assets/bg-swirl.jpg') };
 
-/** White page with the blue ribbon (money flowing), a white fade at the top so titles stay readable. */
-export function Backdrop({ soft }: { soft?: boolean }) {
+/** Soft blue gradient pages (the welcome screen's blue), with a white fade at the top so titles stay readable. */
+export function Backdrop({ variant = 'blob' }: { variant?: 'blob' | 'swirl' }) {
   const win = useWindowDimensions();
   return (
     <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: '#FFFFFF' }]}>
-      <Image source={FLOW_BG} resizeMode="cover" accessible={false} style={{ position: 'absolute', top: 0, left: 0, width: win.width, height: win.height, opacity: soft ? 0.5 : 1 }} />
+      <Image source={BG[variant]} resizeMode="cover" accessible={false} style={{ position: 'absolute', top: 0, left: 0, width: win.width, height: win.height }} />
       <Svg width={win.width} height={400} style={{ position: 'absolute', top: 0, left: 0 }}>
         <Defs>
           <LinearGradient id="bdfade" x1="0" y1="0" x2="0" y2="1">
@@ -32,12 +32,12 @@ export function Backdrop({ soft }: { soft?: boolean }) {
 }
 
 /** Full-screen page. With no image it gets the ribbon backdrop. */
-export function Poster({ image, children }: { image?: ImageSourcePropType; children: React.ReactNode }) {
+export function Poster({ image, variant, children }: { image?: ImageSourcePropType; variant?: 'blob' | 'swirl'; children: React.ReactNode }) {
   const insets = useSafeAreaInsets();
   const win = useWindowDimensions();
   return (
     <View style={{ flex: 1, backgroundColor: '#FFFFFF', paddingTop: insets.top + 12, paddingBottom: Math.max(insets.bottom, 16) + 8, paddingHorizontal: 20 }}>
-      {image ? <Image source={image} resizeMode="cover" style={{ position: 'absolute', top: 0, left: 0, width: win.width, height: win.height }} accessible={false} /> : <Backdrop />}
+      {image ? <Image source={image} resizeMode="cover" style={{ position: 'absolute', top: 0, left: 0, width: win.width, height: win.height }} accessible={false} /> : <Backdrop variant={variant} />}
       {children}
     </View>
   );
@@ -98,7 +98,7 @@ export function StepFrame({ step, title, subtitle, onBack, children, footer, art
   const insets = useSafeAreaInsets();
   return (
     <View style={{ flex: 1, backgroundColor: '#FFFFFF', paddingTop: insets.top + 8 }}>
-      <Backdrop soft />
+      <Backdrop variant={step % 2 ? 'blob' : 'swirl'} />
       <StepHeader step={step} onBack={onBack} />
       <ScrollView contentContainerStyle={sf.body} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         <Text style={sf.title} accessibilityRole="header">{title}</Text>

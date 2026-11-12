@@ -100,7 +100,7 @@ function Flow({ mode, amount = 0, initialCats, onBack, onAmount, onCats, onSkip 
 
   const lift = topH ? -(topH / 2 - 38) : 0;
   return (
-    <Poster image={require('../../../assets/flow-bg.jpg')}>
+    <Poster variant={mode === 'amount' ? 'blob' : 'swirl'}>
       <Svg pointerEvents="none" width={win.width} height={400} style={{ position: 'absolute', top: 0, left: 0 }}>
         <Defs>
           <LinearGradient id="fade" x1="0" y1="0" x2="0" y2="1">
