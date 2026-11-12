@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { Image } from 'expo-image';
 import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { tr } from '../../i18n';
 import { Text } from '../../design/Text';
@@ -9,6 +8,7 @@ import { formatMoney } from '../../logic/money';
 import { monthlySpend, RecurringMerchant } from '../../logic/scan';
 import type { Found } from '../../logic/scan';
 import { monthName } from '../../store/calendar';
+import { BankEmailAnimation } from './BankEmailAnimation';
 import { BigButton, DashedAdd, ob, StepFrame } from './ui';
 
 const Link = ({ title, onPress }: { title: string; onPress: () => void }) => (
@@ -21,7 +21,7 @@ export function AlertQuestion({ onBack, onYes, onNo }: { onBack: () => void; onY
     <StepFrame step={2} title="Does your bank email you when you pay?" subtitle="Most banks can send an email every time money moves, like “Card payment 12,000₮ at EMART”." onBack={onBack}
       footer={<><BigButton title="Yes, I get alerts" onPress={onYes} /><Link title="No, I don't" onPress={onNo} /></>}>
       <Text style={s.body}>If you do, xypa can read those emails and fill in your spending for you. If you don't, a bank statement works just as well.</Text>
-      <Image source={require('../../../assets/lemon-glass.webp')} style={s.art} contentFit="contain" accessible={false} />
+      <View style={s.art}><BankEmailAnimation /></View>
     </StepFrame>
   );
 }
@@ -104,7 +104,7 @@ export function Categorize({ items, onBack, onNext }: { items: RecurringMerchant
 const s = StyleSheet.create({
   link: { minHeight: 48, alignItems: 'center', justifyContent: 'center' },
   linkT: { fontFamily: font.medium, fontSize: 16, color: ob.ink },
-  art: { alignSelf: 'center', width: 260, height: 260, marginTop: 12 },
+  art: { marginTop: 14 },
   body: { fontFamily: font.regular, fontSize: 16, lineHeight: 23, color: ob.ink },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, minHeight: 52 },
   rowL: { fontFamily: font.regular, fontSize: 17, color: ob.ink, flexShrink: 1 },

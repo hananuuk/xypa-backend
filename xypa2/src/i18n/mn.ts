@@ -1,4 +1,13 @@
 export const mn: Record<string, string> = {
+  "Animation: a bank notification arrives, opens into the full email, xypa reads the amount, shop and time, and the payment appears in xypa filed under Groceries.": "Анимаци: банкнаас мэдэгдэл ирж, имэйл болон нээгдэнэ. xypa дүн, дэлгүүр, цагийг уншаад гүйлгээг Хүнс дугтуйнд хийнэ.",
+  "Play animation": "Анимаци тоглуулах",
+  "Pause animation": "Анимаци зогсоох",
+  "now": "Одоо",
+  "Card payment": "Картын төлбөр",
+  "Merchant": "Дэлгүүр",
+  "Card alert · to me": "Картын мэдэгдэл · надад",
+  "Card payment 48,600₮ at Nomin Supermarket": "Картын төлбөр 48,600₮, Nomin Supermarket",
+  "5 Nov, 12:40": "11-р сарын 5, 12:40",
   "Does your bank email you when you pay?": "Төлбөр хийхэд банк тань имэйл илгээдэг үү?",
   "Most banks can send an email every time money moves, like “Card payment 12,000₮ at EMART”.": "Ихэнх банк мөнгө хөдлөх бүрд имэйл илгээж чаддаг. Жишээ нь “Картын төлбөр 12,000₮, EMART”.",
   "Yes, I get alerts": "Тийм, надад ирдэг",
