@@ -9,6 +9,7 @@ import { monthlySpend, RecurringMerchant } from '../../logic/scan';
 import type { Found } from '../../logic/scan';
 import { monthName } from '../../store/calendar';
 import { BankNotificationAnimation } from './BankNotificationAnimation';
+import { StatementAnimation } from './StatementAnimation';
 import { BigButton, DashedAdd, ob, StepFrame } from './ui';
 
 const Link = ({ title, onPress }: { title: string; onPress: () => void }) => (
@@ -27,10 +28,9 @@ export function AlertQuestion({ onBack, onYes, onNo }: { onBack: () => void; onY
 /** No alerts: offer a statement, otherwise the person adds categories by hand. */
 export function AskStatement({ onBack, onYes, onNo }: { onBack: () => void; onYes: () => void; onNo: () => void }) {
   return (
-    <StepFrame step={3} title="Would you rather upload a statement?" subtitle="Your last 3 months from your bank app. xypa reads it on the spot to find your spending." onBack={onBack}
-      footer={<><BigButton title="Yes, upload a statement" onPress={onYes} /><Link title="No, I'll add categories myself" onPress={onNo} /></>}>
-      <Text style={s.body}>You can use a PDF, Excel or CSV file.</Text>
-    </StepFrame>
+    <StepFrame step={3} title="Would you rather upload a statement?" subtitle="Your last 3 months from your bank app, as PDF, Excel or CSV. xypa reads it on the spot to find your spending." onBack={onBack}
+      art={<StatementAnimation />}
+      footer={<><BigButton title="Yes, upload a statement" onPress={onYes} /><Link title="No, I'll add categories myself" onPress={onNo} /></>} />
   );
 }
 

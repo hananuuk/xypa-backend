@@ -1,4 +1,10 @@
 export const mn: Record<string, string> = {
+  "Your last 3 months from your bank app, as PDF, Excel or CSV. xypa reads it on the spot to find your spending.": "Банкны апп-аасаа сүүлийн 3 сарын хуулгаа PDF, Excel эсвэл CSV хэлбэрээр аваарай. xypa тэр дор нь уншаад таны зарлагыг олно.",
+  "A bank statement being read, payment by payment": "Банкны хуулгыг гүйлгээ бүрээр нь уншиж байна",
+  "Statement": "Хуулга",
+  "Last 3 months": "Сүүлийн 3 сар",
+  "Salary": "Цалин",
+  "{0} transactions found": "{0} гүйлгээ олдлоо",
   "Bank notifications arriving, like Card payment 48,600₮ at Nomin Supermarket": "Банкны мэдэгдлүүд ирж байна, жишээ нь Картын төлбөр 48,600₮, Nomin Supermarket",
   "Card payment 7,500₮ at Tom N Toms Coffee": "Картын төлбөр 7,500₮, Tom N Toms Coffee",
   "Card payment 32,000₮ at Shell": "Картын төлбөр 32,000₮, Shell",
